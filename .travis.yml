@@ -7,6 +7,8 @@ services:
 go:
   - stable
 
+go_import_path: github.com/hellofresh/janus
+
 env:
   - MAKE_TASK=test
   - MAKE_TASK=test-integration
