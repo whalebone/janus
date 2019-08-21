@@ -275,7 +275,10 @@
 [[projects]]
   digest = "1:739b2038a38cebb50e922d18f4b042c042256320fea2db094814aeef8891e0c1"
   name = "github.com/magiconair/properties"
-  packages = ["."]
+  packages = [
+    ".",
+    "assert",
+  ]
   pruneopts = ""
   revision = "d419a98cdbed11a922bf76f257b7c4be79b50e73"
   version = "v1.7.4"
@@ -302,6 +305,14 @@
   packages = ["."]
   pruneopts = ""
   revision = "b4575eea38cca1123ec2dc90c26529b5c5acfcff"
+
+[[projects]]
+  digest = "1:4c0404dc03d974acd5fcd8b8d3ce687b13bd169db032b89275e8b9d77b98ce8c"
+  name = "github.com/patrickmn/go-cache"
+  packages = ["."]
+  pruneopts = ""
+  revision = "a3647f8e31d79543b2d0f0ae2fe5c379d72cedc0"
+  version = "v2.1.0"
 
 [[projects]]
   digest = "1:d60cfeee185019d4fcd35e8c89c83aff576e4723b6100300bf67b05be961388f"
@@ -680,8 +691,10 @@
     "github.com/hellofresh/stats-go/hooks",
     "github.com/hellofresh/stats-go/timer",
     "github.com/kelseyhightower/envconfig",
+    "github.com/magiconair/properties/assert",
     "github.com/mitchellh/go-homedir",
     "github.com/mitchellh/mapstructure",
+    "github.com/patrickmn/go-cache",
     "github.com/pkg/errors",
     "github.com/rafaeljesus/retry-go",
     "github.com/rs/cors",
@@ -699,10 +712,12 @@
     "go.opencensus.io/exporter/jaeger",
     "go.opencensus.io/exporter/prometheus",
     "go.opencensus.io/plugin/ochttp",
+    "go.opencensus.io/plugin/ochttp/propagation/b3",
     "go.opencensus.io/stats",
     "go.opencensus.io/stats/view",
     "go.opencensus.io/tag",
     "go.opencensus.io/trace",
+    "go.opencensus.io/trace/propagation",
     "golang.org/x/net/http2",
     "golang.org/x/oauth2",
   ]
