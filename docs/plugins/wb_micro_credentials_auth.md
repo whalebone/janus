@@ -1,6 +1,6 @@
 # Authentication using WB credentials micro-service
 
-Authenticates each request against Whalebone's microCredentials service. Plugin expects user credentials in provided `WB-Access-Key` and `WB-Secret-Key` headers. If authentication is successful `WB-Client-Id` header is injected into the request acording to provided credentials. In-memmory cache is used to prevent microCredentials service overload.
+Authenticates each request against Whalebone's microCredentials service. Plugin expects user credentials in provided `Wb-Access-Key` and `Wb-Secret-Key` headers. If authentication is successful `Wb-Client-Id` header is injected into the request acording to provided credentials. In-memmory cache is used to prevent microCredentials service overload.
 
 ## Configuration
 
