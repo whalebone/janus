@@ -1,3 +1,12 @@
+Whalebone's extended version of Janus API Gateway project. Custom plugin has been added to provide authentication using Whalebone's micorCredentials service. 
+
+Plugin code is located at [pkg/plugin/wbmicrocredentials](pkg/plugin/wbmicrocredentials)
+
+Plugin configuration [specification](docs/plugins/wb_micro_credentials_auth.md)
+
+WB docker image sources (including public-api endpoint configuration) are located at [wb\_docker](wb_docker)
+
+
 <p align="center">  
   <img height="150" src="./janus-logo.png"  alt="Janus" title="Janus">
 </p>

@@ -1,6 +1,6 @@
 # Authentication using WB credentials micro-service
 
-Rate limit how many HTTP requests a developer can make in a given period of seconds, minutes, hours, days, months or years.
+Authenticates each request against Whalebone's microCredentials service. Plugin expects user credentials in provided `WB-Access-Key` and `WB-Secret-Key` headers. If authentication is successful `WB-Client-Id` header is injected into the request acording to provided credentials. In-memmory cache is used to prevent microCrenedtials service overload.
 
 ## Configuration
 
