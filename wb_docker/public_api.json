@@ -1,0 +1,35 @@
+{
+    "name" : "public-api",
+    "active" : @PUBLIC_API_ENABLED@,
+    "proxy" : {
+        "preserve_host" : @PUBLIC_API_PRESERVE_HOST@,
+        "listen_path" : "@PUBLIC_API_LISTEN_PATH@",
+        "upstreams" : {
+            "balancing": "roundrobin",
+            "targets": [
+                {"target": "@PUBLIC_API_UPSTREAM_TARGET@"}
+            ]
+        },
+        "strip_path" : @PUBLIC_API_STRIP_PATH@,
+        "append_path" : @PUBLIC_API_APPEND_PATH@
+    },
+    "plugins": [
+        {
+            "name": "rate_limit",
+            "enabled": @PUBLIC_API_RATE_LIMIT_ENABLED@,
+            "config": {
+                "limit": "@PUBLIC_API_RATE_LIMIT_VALUE@",
+                "policy": "local"
+            }
+        },
+        {
+            "name": "wb_micro_credentials_auth",
+            "enabled": @PUBLIC_API_WB_AUTH_ENABLED@,
+            "config": {
+                "login_endpoint": "@PUBLIC_API_WB_AUTH_LOGIN_ENDPOINT@",
+	            "cache_ttl_secs": @PUBLIC_API_WB_AUTH_CACHE_TTL_SECS@,
+	            "cache_cleanup_secs": @PUBLIC_API_WB_AUTH_CACHE_CLEANUP_SECS@
+            }
+        }
+    ]
+}
