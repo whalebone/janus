@@ -1,7 +1,7 @@
 # build from project root dir using 'docker build -f wb_docker/Dockerfile -t <tag> .'
 FROM golang:1.10-alpine AS builder
 
-ARG VERSION='0.0.1-docker'
+ARG VERSION='3.8.11-rc.1-wb-0.0.1-docker'
 
 WORKDIR /go/src/github.com/hellofresh/janus
 
