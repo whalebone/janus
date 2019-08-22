@@ -1,4 +1,4 @@
-Whalebone's extended version of Janus API Gateway project. Custom plugin has been added to provide authentication using Whalebone's micorCredentials service. 
+Whalebone's extended version of Janus API Gateway project. Custom plugin has been added to provide authentication using Whalebone's microCredentials service. 
 
 Plugin code is located at [pkg/plugin/wbmicrocredentials](pkg/plugin/wbmicrocredentials)
 

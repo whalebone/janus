@@ -26,7 +26,7 @@
 ##### Public-api rate limiting configuration
 
 - `PUBLIC_API_RATE_LIMIT_ENABLED` - rate limiting enabled or disabled for public-api service (optional; true or false; default true)
-- `PUBLIC_API_RATE_LIMIT_VALUE` - see 
+- `PUBLIC_API_RATE_LIMIT_VALUE` - see [rate limit property](../docs/plugins/rate_limit.md)
 
 ##### Public-api requests authentication using micro credentials service configuration
 
