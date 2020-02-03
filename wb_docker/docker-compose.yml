@@ -2,19 +2,19 @@ version: '3.3'
 services:
 
   janus:
-    image: harbor.whalebone.io/janus:version
+    image: harbor.whalebone.io/whalebone/janus:3.8.11-rc.1-wb-0.0.2
     ports:
       - "9090:9090"
       - "9091:9091"
     environment:
       HTTP_PORT: 9090
-      LOG_LEVEL: info 
+      LOG_LEVEL: debug 
       ADMIN_HTTP_PORT: 9091 
       ADMIN_JWT_SECRET: secret 
       ADMIN_BASIC_PASS: admin
       PUBLIC_API_LISTEN_PATH: /public-api/*
-      PUBLIC_API_UPSTREAM_TARGET: http://public-api-host:port/path/prefix
+      PUBLIC_API_UPSTREAM_TARGET: http://docker.for.mac.localhost:8080/whalebone/1
       PUBLIC_API_RATE_LIMIT_VALUE: 5-M
-      PUBLIC_API_WB_AUTH_LOGIN_ENDPOINT: http://micro-credentials-host:port/public-api/credentials/login
+      PUBLIC_API_WB_AUTH_LOGIN_ENDPOINT: http://docker.for.mac.localhost:7070/public-api/credentials/login
       PUBLIC_API_WB_AUTH_CACHE_TTL_SECS: 30
       PUBLIC_API_WB_AUTH_CACHE_CLEANUP_SECS: 60

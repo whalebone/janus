@@ -22,6 +22,7 @@
 - `PUBLIC_API_UPSTREAM_TARGET` - pulblic-api base url
 - `PUBLIC_API_STRIP_PATH` - see [strip_path property spec](../docs/proxy/strip_uri_property.md) (optional; true or false; default true)
 - `PUBLIC_API_APPEND_PATH` - see [append_path property spec](../docs/proxy/append_uri_property.md) (optional; true or false; default true)
+- `PUBLIC_API_HTTP_METHODS` - see [methods property spec](../docs/proxy/request_http_method.md) request http methods must be comma separted, each method must be quoted, eg "GET", "POST" (optional; by default "GET", "POST")
 
 ##### Public-api rate limiting configuration
 

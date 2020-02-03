@@ -11,7 +11,8 @@
             ]
         },
         "strip_path" : @PUBLIC_API_STRIP_PATH@,
-        "append_path" : @PUBLIC_API_APPEND_PATH@
+        "append_path" : @PUBLIC_API_APPEND_PATH@,
+        "methods": [@PUBLIC_API_HTTP_METHODS@]
     },
     "plugins": [
         {
