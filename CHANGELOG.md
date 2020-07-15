@@ -1,6 +1,35 @@
 # Unreleased
 
+- None
+
+--
+
+# 3.8.19
+
+## Added
+- Added `JAEGER_AGENT_HOST` and `JAEGER_AGENT_PORT` environment variable to allow specifying host and port separately instead of as the full URL.
+   -- Note: you are still able to specify `TRACING_JAEGER_SAMPLING_SERVER_URL`
+
+# 3.8.13, 3.8.14, 3.8.15, 3.8.16, 3.8.17, 3.8.18
+
+## Added
+- experimental helm charts
+
+# 3.8.12
+
+## Changed
+
+- Changed trace sampling behavior when `TRACING_IS_PUBLIC_ENDPOINT` is set to false
+
+# 3.8.11
+
+## Added
 - Added trace debugging setting (`tracing.DebugTraceKey`) to get the Trace ID of a debug request in the response
+- Added `TRACING_IS_PUBLIC_ENDPOINT` environment variable to allow trace propagation
+
+## Changed
+- Releases are now built with go1.12
+- Updated github client dependency
 
 --
 
@@ -38,7 +67,7 @@
 ## Fixed
 
 - Circuit breaker plugin statsd collector prefix
- 
+
 # 3.8.6
 
 ## Updated

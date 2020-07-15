@@ -14,10 +14,9 @@ all: clean deps test build
 
 deps:
 	@echo "$(OK_COLOR)==> Installing dependencies$(NO_COLOR)"
-	@go get -u github.com/golang/dep/cmd/dep
 	@go get -u golang.org/x/lint/golint
 	@go get -u github.com/DATA-DOG/godog/cmd/godog
-	@$(GOPATH)/bin/dep ensure -v -vendor-only
+	#@$(GOPATH)/bin/dep ensure -v -vendor-only
 
 build:
 	@echo "$(OK_COLOR)==> Building... $(NO_COLOR)"
@@ -56,8 +55,8 @@ clean:
 #-- tools
 #---------------
 
-.PHONY: tools tools.dep tools.golint
-tools: tools.dep tools.golint
+.PHONY: tools tools.golint
+tools: tools.golint
 
 tools.golint:
 	@command -v $(GOPATH)/bin/golint >/dev/null ; if [ $$? -ne 0 ]; then \
@@ -65,8 +64,8 @@ tools.golint:
 		go get github.com/golang/lint/golint; \
 	fi
 
-tools.dep:
-	@command -v $(GOPATH)/bin/dep >/dev/null ; if [ $$? -ne 0 ]; then \
+# tools.dep:
+#	@command -v $(GOPATH)/bin/dep >/dev/null ; if [ $$? -ne 0 ]; then \
 		echo "--> installing dep"; \
 		@go get -u github.com/golang/dep/cmd/dep; \
 	fi

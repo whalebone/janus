@@ -113,12 +113,15 @@ type Tracing struct {
 	SamplingStrategy string        `envconfig:"TRACING_SAMPLING_STRATEGY"`
 	SamplingParam    float64       `envconfig:"TRACING_SAMPLING_PARAM"`
 	DebugTraceKey    string        `envconfig:"TRACING_DEBUG_TRACE_KEY"`
+	IsPublicEndpoint bool          `envconfig:"TRACING_IS_PUBLIC_ENDPOINT"`
 	JaegerTracing    JaegerTracing `mapstructure:"jaeger"`
 }
 
 // JaegerTracing holds the Jaeger tracing configuration
 type JaegerTracing struct {
-	SamplingServerURL string `envconfig:"TRACING_JAEGER_SAMPLING_SERVER_URL"`
+	SamplingServerURL  string `envconfig:"TRACING_JAEGER_SAMPLING_SERVER_URL"`
+	SamplingServerHost string `envconfig:"JAEGER_AGENT_HOST"`
+	SamplingServerPort string `envconfig:"JAEGER_AGENT_PORT"`
 }
 
 func init() {
@@ -151,6 +154,7 @@ func init() {
 	viper.SetDefault("tracing.samplingStrategy", "probabilistic")
 	viper.SetDefault("tracing.samplingParam", 0.15)
 	viper.SetDefault("tracing.debugTraceKey", "")
+	viper.SetDefault("tracing.isPublicEndpoint", true)
 
 	logging.InitDefaults(viper.GetViper(), "log")
 }
