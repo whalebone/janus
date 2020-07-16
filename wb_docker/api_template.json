@@ -1,0 +1,36 @@
+{
+    "name" : "@NAME@",
+    "active" : @ENABLED@,
+    "proxy" : {
+        "preserve_host" : @PRESERVE_HOST@,
+        "listen_path" : "@LISTEN_PATH@",
+        "upstreams" : {
+            "balancing": "roundrobin",
+            "targets": [
+                {"target": "@UPSTREAM_TARGET@"}
+            ]
+        },
+        "strip_path" : @STRIP_PATH@,
+        "append_path" : @APPEND_PATH@,
+        "methods": [@HTTP_METHODS@]
+    },
+    "plugins": [
+        {
+            "name": "rate_limit",
+            "enabled": @RATE_LIMIT_ENABLED@,
+            "config": {
+                "limit": "@RATE_LIMIT_VALUE@",
+                "policy": "local"
+            }
+        },
+        {
+            "name": "wb_micro_credentials_auth",
+            "enabled": @WB_AUTH_ENABLED@,
+            "config": {
+                "login_endpoint": "@WB_AUTH_LOGIN_ENDPOINT@",
+	            "cache_ttl_secs": @WB_AUTH_CACHE_TTL_SECS@,
+	            "cache_cleanup_secs": @WB_AUTH_CACHE_CLEANUP_SECS@
+            }
+        }
+    ]
+}

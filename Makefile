@@ -15,8 +15,7 @@ all: clean deps test build
 deps:
 	@echo "$(OK_COLOR)==> Installing dependencies$(NO_COLOR)"
 	@go get -u golang.org/x/lint/golint
-	@go get -u github.com/DATA-DOG/godog/cmd/godog
-	#@$(GOPATH)/bin/dep ensure -v -vendor-only
+	@go get -u github.com/cucumber/godog/cmd/godog
 
 build:
 	@echo "$(OK_COLOR)==> Building... $(NO_COLOR)"
@@ -24,11 +23,11 @@ build:
 
 test: lint format vet
 	@echo "$(OK_COLOR)==> Running tests$(NO_COLOR)"
-	@go test -v -cover ./...
+	@go test -cover ./...
 
 test-integration: lint format vet
 	@echo "$(OK_COLOR)==> Running tests$(NO_COLOR)"
-	@go test -v -cover -tags=integration ./...
+	@go test -cover -tags=integration ./...
 
 test-features:
 	@/bin/sh -c "JANUS_BUILD_ONLY_DEFAULT=1 PKG_SRC=$(PKG_SRC) ./build/build.sh"
@@ -44,7 +43,7 @@ vet:
 
 lint: tools.golint
 	@echo "$(OK_COLOR)==> checking code style with 'golint' tool$(NO_COLOR)"
-	@go list ./... | xargs -n 1 $(GOPATH)/bin/golint -set_exit_status
+	@go list ./... | xargs -n 1 golint -set_exit_status
 
 clean:
 	@echo "$(OK_COLOR)==> Cleaning project$(NO_COLOR)"
@@ -59,13 +58,7 @@ clean:
 tools: tools.golint
 
 tools.golint:
-	@command -v $(GOPATH)/bin/golint >/dev/null ; if [ $$? -ne 0 ]; then \
+	@command -v golint >/dev/null ; if [ $$? -ne 0 ]; then \
 		echo "--> installing golint"; \
 		go get github.com/golang/lint/golint; \
-	fi
-
-# tools.dep:
-#	@command -v $(GOPATH)/bin/dep >/dev/null ; if [ $$? -ne 0 ]; then \
-		echo "--> installing dep"; \
-		@go get -u github.com/golang/dep/cmd/dep; \
 	fi

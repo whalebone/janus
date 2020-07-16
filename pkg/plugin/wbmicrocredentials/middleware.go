@@ -13,6 +13,7 @@ const (
 	accessKeyHeader = "Wb-Access-Key"
 	secretKeyHeader = "Wb-Secret-Key"
 	clientIDHeader  = "Wb-Client-Id"
+	userIDHeader    = "Wb-User-Id"
 )
 
 // NewWBMicroCredAuth is a HTTP basic auth middleware
@@ -30,6 +31,7 @@ func NewWBMicroCredAuth(wbClient *WBMicroCredClient, cache *CredentialsCache) fu
 			hashedCred := hashCredentials(wbAccessKey, wbSecretKey)
 			// client id as returned from WB microCredentials service after login call
 			var clientID string
+			var userID string
 			foundInCache := false
 			// cache doesn't have to be used, if not then it is nil
 			if cache != nil {
@@ -40,25 +42,30 @@ func NewWBMicroCredAuth(wbClient *WBMicroCredClient, cache *CredentialsCache) fu
 						return
 					}
 					clientID = cachedCred.ClientID
+					userID = cachedCred.UserID
 				}
 			}
 			if !foundInCache {
 				var success bool
 				var err error
-				clientID, success, err = wbClient.Login(wbAccessKey, wbSecretKey)
+				clientID, userID, success, err = wbClient.Login(wbAccessKey, wbSecretKey)
 				if err != nil {
 					errors.Handler(w, r, ErrInvalidCredentials)
 					return
 				}
 				if cache != nil {
-					cache.Put(hashedCred, &CachedCredentials{ClientID: clientID, LoginSuccess: success})
+					cache.Put(hashedCred, NewCachedCredentials(clientID, userID, success))
 				}
 				if !success {
 					errors.Handler(w, r, ErrInvalidCredentials)
 					return
 				}
 			}
+			// add used identification headers
 			r.Header.Set(clientIDHeader, clientID)
+			r.Header.Set(userIDHeader, userID)
+			// remove secret key from the request header
+			r.Header.Del(secretKeyHeader)
 			handler.ServeHTTP(w, r)
 		})
 	}

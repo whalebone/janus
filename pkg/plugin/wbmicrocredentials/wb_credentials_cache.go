@@ -10,7 +10,17 @@ import (
 // CachedCredentials struct for caching credentials
 type CachedCredentials struct {
 	ClientID     string
+	UserID       string
 	LoginSuccess bool
+}
+
+// NewCachedCredentials is a constructor
+func NewCachedCredentials(clientID, userID string, loginSuccess bool) *CachedCredentials {
+	return &CachedCredentials{
+		ClientID: clientID,
+		UserID: userID,
+		LoginSuccess: loginSuccess,
+	}
 }
 
 // CredentialsCache represents a in memory cache for credentials
@@ -34,7 +44,7 @@ func (c *CredentialsCache) Get(credentialsHash string) (*CachedCredentials, bool
 	return nil, false
 }
 
-// Put fetches credentials from cache
+// Put stores crenedtials in cache
 func (c *CredentialsCache) Put(credentialsHash string, credentials *CachedCredentials) {
 	c.Lock()
 	defer c.Unlock()
