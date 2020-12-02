@@ -21,7 +21,7 @@
             "config": {
                 "limit": "@RATE_LIMIT_VALUE@",
                 "policy": "local",
-                "trust_forward_headers": false
+                "trust_forward_headers": true
             }
         },
         {
