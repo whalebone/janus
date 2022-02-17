@@ -3,62 +3,31 @@ OK_COLOR=\033[32;01m
 ERROR_COLOR=\033[31;01m
 WARN_COLOR=\033[33;01m
 
-# The import path is the unique absolute name of your repository.
-# All subpackages should always be imported as relative to it.
-# If you change this, run `make clean`.
-PKG_SRC := github.com/hellofresh/janus
+VERSION ?= "dev-$(shell git rev-parse --short HEAD)"
+GO_LINKER_FLAGS=-ldflags="-s -w -X main.version=$(VERSION)"
 
-.PHONY: all clean deps build
+.PHONY: all lint test-unit test-integration test-features build
 
-all: clean deps test build
-
-deps:
-	@echo "$(OK_COLOR)==> Installing dependencies$(NO_COLOR)"
-	@go get -u golang.org/x/lint/golint
-	@go get -u github.com/cucumber/godog/cmd/godog
+all: test-unit build
 
 build:
-	@echo "$(OK_COLOR)==> Building... $(NO_COLOR)"
-	@/bin/sh -c "JANUS_BUILD_ONLY_DEFAULT=$(JANUS_BUILD_ONLY_DEFAULT) PKG_SRC=$(PKG_SRC) VERSION=$(VERSION) ./build/build.sh"
+	@echo "$(OK_COLOR)==> Building default binary... $(NO_COLOR)"
+	@CGO_ENABLED=0 go build ${GO_LINKER_FLAGS} -o "dist/janus"
 
-test: lint format vet
-	@echo "$(OK_COLOR)==> Running tests$(NO_COLOR)"
-	@go test -cover ./...
+test-unit:
+	@echo "$(OK_COLOR)==> Running unit tests$(NO_COLOR)"
+	@go test ./...
 
-test-integration: lint format vet
-	@echo "$(OK_COLOR)==> Running tests$(NO_COLOR)"
-	@go test -cover -tags=integration ./...
+test-integration: _mocks
+	@echo "$(OK_COLOR)==> Running integration tests$(NO_COLOR)"
+	@go test -cover -tags=integration -coverprofile=coverage.txt -covermode=atomic ./...
 
-test-features:
-	@/bin/sh -c "JANUS_BUILD_ONLY_DEFAULT=1 PKG_SRC=$(PKG_SRC) ./build/build.sh"
+test-features: build _mocks
 	@/bin/sh -c "./build/features.sh"
 
-format:
-	@echo "$(OK_COLOR)==> checking code formating with 'gofmt' tool$(NO_COLOR)"
-	@gofmt -l -s cmd pkg | grep ".*\.go"; if [ "$$?" = "0" ]; then exit 1; fi
+lint:
+	@echo "$(OK_COLOR)==> Linting with golangci-lint running in docker container$(NO_COLOR)"
+	@docker run --rm -v $(PWD):/app -w /app golangci/golangci-lint:v1.30.0 golangci-lint run -v
 
-vet:
-	@echo "$(OK_COLOR)==> checking code correctness with 'go vet' tool$(NO_COLOR)"
-	@go vet ./...
-
-lint: tools.golint
-	@echo "$(OK_COLOR)==> checking code style with 'golint' tool$(NO_COLOR)"
-	@go list ./... | xargs -n 1 golint -set_exit_status
-
-clean:
-	@echo "$(OK_COLOR)==> Cleaning project$(NO_COLOR)"
-	@go clean
-	@rm -rf bin $GOPATH/bin
-
-#---------------
-#-- tools
-#---------------
-
-.PHONY: tools tools.golint
-tools: tools.golint
-
-tools.golint:
-	@command -v golint >/dev/null ; if [ $$? -ne 0 ]; then \
-		echo "--> installing golint"; \
-		go get github.com/golang/lint/golint; \
-	fi
+_mocks:
+	@/bin/sh -c "./build/mocks.sh"

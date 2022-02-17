@@ -1,13 +1,13 @@
 package cb
 
 import (
-	"github.com/hellofresh/stats-go/bucket"
-	"github.com/hellofresh/stats-go/timer"
-	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
+	"errors"
 
-	"github.com/afex/hystrix-go/hystrix/metric_collector"
+	metricCollector "github.com/afex/hystrix-go/hystrix/metric_collector"
+	"github.com/hellofresh/stats-go/bucket"
 	"github.com/hellofresh/stats-go/client"
+	"github.com/hellofresh/stats-go/timer"
+	log "github.com/sirupsen/logrus"
 )
 
 // StatsCollector fulfills the metricCollector interface allowing users to ship circuit

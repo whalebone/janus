@@ -1,18 +1,20 @@
 package bootstrap
 
 import (
+	"fmt"
 	"time"
 
-	"github.com/DATA-DOG/godog"
+	"github.com/cucumber/godog"
+	"github.com/cucumber/messages-go/v10"
+
 	"github.com/hellofresh/janus/pkg/api"
-	"github.com/pkg/errors"
 )
 
 // RegisterAPIContext registers godog suite context for handling API related steps
-func RegisterAPIContext(s *godog.Suite, apiRepo api.Repository, ch chan<- api.ConfigurationMessage) {
-	ctx := &apiContext{apiRepo: apiRepo, ch: ch}
+func RegisterAPIContext(ctx *godog.ScenarioContext, apiRepo api.Repository, ch chan<- api.ConfigurationMessage) {
+	scenarioCtx := &apiContext{apiRepo: apiRepo, ch: ch}
 
-	s.BeforeScenario(ctx.clearAPI)
+	ctx.BeforeScenario(scenarioCtx.clearAPI)
 }
 
 type apiContext struct {
@@ -20,10 +22,10 @@ type apiContext struct {
 	ch      chan<- api.ConfigurationMessage
 }
 
-func (c *apiContext) clearAPI(arg interface{}) {
+func (c *apiContext) clearAPI(*messages.Pickle) {
 	data, err := c.apiRepo.FindAll()
 	if err != nil {
-		panic(errors.Wrap(err, "Failed to get all registered route specs"))
+		panic(fmt.Errorf("failed to get all registered route specs: %w", err))
 	}
 
 	for _, definition := range data {

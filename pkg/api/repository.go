@@ -2,17 +2,18 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/url"
 	"time"
 
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
 const (
 	mongodb = "mongodb"
+	cassandra = "cassandra"
 	file    = "file"
 )
 
@@ -36,13 +37,16 @@ type Listener interface {
 func BuildRepository(dsn string, refreshTime time.Duration) (Repository, error) {
 	dsnURL, err := url.Parse(dsn)
 	if err != nil {
-		return nil, errors.Wrap(err, "Error parsing the DSN")
+		return nil, fmt.Errorf("error parsing the DSN: %w", err)
 	}
 
 	switch dsnURL.Scheme {
 	case mongodb:
 		log.Debug("MongoDB configuration chosen")
 		return NewMongoAppRepository(dsn, refreshTime)
+	case cassandra:
+		log.Debugf("Casssandra configuration chosen: dsn is %s, dsnURL is %s", dsnURL.Path, dsnURL)
+		return NewCassandraRepository(dsnURL.Path, refreshTime)
 	case file:
 		log.Debug("File system based configuration chosen")
 		apiPath := fmt.Sprintf("%s/apis", dsnURL.Path)
@@ -50,10 +54,10 @@ func BuildRepository(dsn string, refreshTime time.Duration) (Repository, error) 
 		log.WithField("path", apiPath).Debug("Trying to load API configuration files")
 		repo, err := NewFileSystemRepository(apiPath)
 		if err != nil {
-			return nil, errors.Wrap(err, "could not create a file system repository")
+			return nil, fmt.Errorf("could not create a file system repository: %w", err)
 		}
 		return repo, nil
 	default:
-		return nil, errors.New("The selected scheme is not supported to load API definitions")
+		return nil, errors.New("selected scheme is not supported to load API definitions")
 	}
 }

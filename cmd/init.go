@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"contrib.go.opencensus.io/exporter/jaeger"
+	"contrib.go.opencensus.io/exporter/prometheus"
 	"github.com/hellofresh/janus/pkg/config"
 	obs "github.com/hellofresh/janus/pkg/observability"
 	"github.com/hellofresh/logging-go"
@@ -17,8 +19,6 @@ import (
 	"github.com/hellofresh/stats-go/client"
 	"github.com/hellofresh/stats-go/hooks"
 	log "github.com/sirupsen/logrus"
-	"go.opencensus.io/exporter/jaeger"
-	"go.opencensus.io/exporter/prometheus"
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/trace"
 )
@@ -112,12 +112,12 @@ func initStatsExporter() {
 	// Register stats exporter according to config
 	switch globalConfig.Stats.Exporter {
 	case obs.Datadog:
+		fallthrough
 	case obs.Stackdriver:
 		logger.Warn("Not implemented!")
 		return
 	case obs.Prometheus:
 		err = initPrometheusExporter()
-		break
 	default:
 		logger.Info("Invalid or no stats exporter was specified")
 		return
@@ -154,14 +154,15 @@ func initTracingExporter() {
 
 	switch globalConfig.Tracing.Exporter {
 	case obs.AzureMonitor:
+		fallthrough
 	case obs.Datadog:
+		fallthrough
 	case obs.Stackdriver:
+		fallthrough
 	case obs.Zipkin:
 		logger.Warn("Not implemented!")
-		return
 	case obs.Jaeger:
 		err = initJaegerExporter()
-		break
 	default:
 		logger.Info("Invalid or no tracing exporter was specified")
 		return
@@ -179,13 +180,10 @@ func initTracingExporter() {
 	switch globalConfig.Tracing.SamplingStrategy {
 	case "always":
 		sampler = trace.AlwaysSample()
-		break
 	case "never":
 		sampler = trace.NeverSample()
-		break
 	case "probabilistic":
 		sampler = trace.ProbabilitySampler(globalConfig.Tracing.SamplingParam)
-		break
 	default:
 		logger.Warn("Invalid tracing sampling strategy specified")
 		return

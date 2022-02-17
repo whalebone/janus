@@ -3,17 +3,17 @@ package bootstrap
 import (
 	"time"
 
-	"github.com/DATA-DOG/godog"
+	"github.com/cucumber/godog"
 )
 
 const durationAWhile = time.Second
 
 // RegisterMiscContext registers godog suite context for handling misc steps
-func RegisterMiscContext(s *godog.Suite) {
-	ctx := &miscContext{}
+func RegisterMiscContext(ctx *godog.ScenarioContext) {
+	scenarioCtx := &miscContext{}
 
-	s.Step(`^I wait for a while$`, ctx.iWaitForAWhile)
-	s.Step(`^I wait for "([^"]*)"$`, ctx.iWaitFor)
+	ctx.Step(`^I wait for a while$`, scenarioCtx.iWaitForAWhile)
+	ctx.Step(`^I wait for "([^"]*)"$`, scenarioCtx.iWaitFor)
 }
 
 type miscContext struct{}

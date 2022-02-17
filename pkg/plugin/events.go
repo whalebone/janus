@@ -1,12 +1,14 @@
 package plugin
 
 import (
-	"github.com/globalsign/mgo"
+	"github.com/hellofresh/janus/cassandra/wrapper"
+	"github.com/hellofresh/stats-go/client"
+	"go.mongodb.org/mongo-driver/mongo"
+
 	"github.com/hellofresh/janus/pkg/api"
 	"github.com/hellofresh/janus/pkg/config"
 	"github.com/hellofresh/janus/pkg/proxy"
 	"github.com/hellofresh/janus/pkg/router"
-	"github.com/hellofresh/stats-go/client"
 )
 
 // Define the event names for the startup and shutdown events
@@ -22,7 +24,8 @@ const (
 // OnStartup represents a event that happens when Janus starts up on the main process
 type OnStartup struct {
 	StatsClient   client.Client
-	MongoSession  *mgo.Session
+	MongoDB       *mongo.Database
+	Cassandra 	  wrapper.Holder
 	Register      *proxy.Register
 	Config        *config.Specification
 	Configuration []*api.Definition

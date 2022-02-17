@@ -9,12 +9,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/DATA-DOG/godog"
-	"github.com/DATA-DOG/godog/gherkin"
-	jwtgo "github.com/dgrijalva/jwt-go"
+	"github.com/cucumber/godog"
+	"github.com/cucumber/messages-go/v10"
+	jwtGo "github.com/dgrijalva/jwt-go"
+	"github.com/tidwall/gjson"
+
 	"github.com/hellofresh/janus/pkg/config"
 	"github.com/hellofresh/janus/pkg/jwt"
-	"github.com/tidwall/gjson"
 )
 
 const (
@@ -22,33 +23,38 @@ const (
 )
 
 // RegisterRequestContext registers godog suite context for handling HTTP-requests related steps
-func RegisterRequestContext(s *godog.Suite, port, apiPort, portSecondary, apiPortSecondary int, adminCred config.Credentials) {
-	ctx := &requestContext{
+func RegisterRequestContext(ctx *godog.ScenarioContext, port, apiPort, portSecondary, apiPortSecondary, defaultUpstreamsPort, upstreamsPort int, adminCred config.Credentials) {
+	scenarioCtx := &requestContext{
 		port:             port,
 		apiPort:          apiPort,
 		portSecondary:    portSecondary,
 		apiPortSecondary: apiPortSecondary,
 		adminCred:        adminCred,
+
+		defaultUpstreamsHost: fmt.Sprintf("/localhost:%d/", defaultUpstreamsPort),
+		defaultServiceHost:   fmt.Sprintf("/{service}:%d/", defaultUpstreamsPort),
+		dynamicUpstreamsHost: fmt.Sprintf("/localhost:%d/", upstreamsPort),
+		dynamicServiceHost:   fmt.Sprintf("/{service}:%d/", upstreamsPort),
 	}
 
-	ctx.requestHeaders = make(http.Header)
+	scenarioCtx.requestHeaders = make(http.Header)
 
-	s.Step(`^I request "([^"]*)" path with "([^"]*)" method$`, ctx.iRequestPathWithMethod)
-	s.Step(`^I request "([^"]*)" API path with "([^"]*)" method$`, ctx.iRequestAPIPathWithMethod)
-	s.Step(`^I request "([^"]*)" secondary path with "([^"]*)" method$`, ctx.iRequestSecondaryPathWithMethod)
-	s.Step(`^I request "([^"]*)" secondary API path with "([^"]*)" method$`, ctx.iRequestSecondaryAPIPathWithMethod)
-	s.Step(`^I should receive (\d+) response code$`, ctx.iShouldReceiveResponseCode)
-	s.Step(`^header "([^"]*)" should be "([^"]*)"$`, ctx.headerShouldBe)
-	s.Step(`^header "([^"]*)" should start with "([^"]*)"$`, ctx.headerShouldStartWith)
-	s.Step(`^the response should contain "([^"]*)"$`, ctx.responseShouldContain)
-	s.Step(`^response JSON body has "([^"]*)" path with value \'([^']*)\'$`, ctx.responseJSONBodyHasPathWithValue)
-	s.Step(`^response JSON body has "([^"]*)" path and is an array of length (\d+)$`, ctx.responseJSONBodyHasPathIsAnArrayOfLenght)
-	s.Step(`^response JSON body has "([^"]*)" path`, ctx.responseJSONBodyHasPath)
-	s.Step(`^response JSON body is an array of length (\d+)$`, ctx.responseJSONBodyIsAnArrayOfLength)
-	s.Step(`^request JSON payload:$`, ctx.requestJSONPayload)
-	s.Step(`^request header "([^"]*)" is set to "([^"]*)"$`, ctx.requestHeaderIsSetTo)
-	s.Step(`^request JWT token is not set$`, ctx.requestJWTTokenIsNotSet)
-	s.Step(`^request JWT token is valid admin token$`, ctx.requestJWTTokenIsValidAdminToken)
+	ctx.Step(`^I request "([^"]*)" path with "([^"]*)" method$`, scenarioCtx.iRequestPathWithMethod)
+	ctx.Step(`^I request "([^"]*)" API path with "([^"]*)" method$`, scenarioCtx.iRequestAPIPathWithMethod)
+	ctx.Step(`^I request "([^"]*)" secondary path with "([^"]*)" method$`, scenarioCtx.iRequestSecondaryPathWithMethod)
+	ctx.Step(`^I request "([^"]*)" secondary API path with "([^"]*)" method$`, scenarioCtx.iRequestSecondaryAPIPathWithMethod)
+	ctx.Step(`^I should receive (\d+) response code$`, scenarioCtx.iShouldReceiveResponseCode)
+	ctx.Step(`^header "([^"]*)" should be "([^"]*)"$`, scenarioCtx.headerShouldBe)
+	ctx.Step(`^header "([^"]*)" should start with "([^"]*)"$`, scenarioCtx.headerShouldStartWith)
+	ctx.Step(`^the response should contain "([^"]*)"$`, scenarioCtx.responseShouldContain)
+	ctx.Step(`^response JSON body has "([^"]*)" path with value \'([^']*)\'$`, scenarioCtx.responseJSONBodyHasPathWithValue)
+	ctx.Step(`^response JSON body has "([^"]*)" path and is an array of length (\d+)$`, scenarioCtx.responseJSONBodyHasPathIsAnArrayOfLenght)
+	ctx.Step(`^response JSON body has "([^"]*)" path`, scenarioCtx.responseJSONBodyHasPath)
+	ctx.Step(`^response JSON body is an array of length (\d+)$`, scenarioCtx.responseJSONBodyIsAnArrayOfLength)
+	ctx.Step(`^request JSON payload:$`, scenarioCtx.requestJSONPayload)
+	ctx.Step(`^request header "([^"]*)" is set to "([^"]*)"$`, scenarioCtx.requestHeaderIsSetTo)
+	ctx.Step(`^request JWT token is not set$`, scenarioCtx.requestJWTTokenIsNotSet)
+	ctx.Step(`^request JWT token is valid admin token$`, scenarioCtx.requestJWTTokenIsValidAdminToken)
 }
 
 type requestContext struct {
@@ -57,6 +63,11 @@ type requestContext struct {
 
 	portSecondary    int
 	apiPortSecondary int
+
+	defaultUpstreamsHost string
+	defaultServiceHost   string
+	dynamicUpstreamsHost string
+	dynamicServiceHost   string
 
 	adminCred config.Credentials
 
@@ -216,8 +227,11 @@ func (c *requestContext) responseJSONBodyIsAnArrayOfLength(length int) error {
 	return nil
 }
 
-func (c *requestContext) requestJSONPayload(body *gherkin.DocString) error {
-	c.requestBody = bytes.NewBufferString(body.Content)
+func (c *requestContext) requestJSONPayload(body *messages.PickleStepArgument_PickleDocString) error {
+	rq := strings.ReplaceAll(body.GetContent(), c.defaultUpstreamsHost, c.dynamicUpstreamsHost)
+	rq = strings.ReplaceAll(rq, c.defaultServiceHost, c.dynamicServiceHost)
+
+	c.requestBody = bytes.NewBufferString(rq)
 	return nil
 }
 
@@ -233,7 +247,7 @@ func (c *requestContext) requestJWTTokenIsNotSet() error {
 
 func (c *requestContext) requestJWTTokenIsValidAdminToken() error {
 	jwtConfig := jwt.NewGuard(c.adminCred)
-	accessToken, err := jwt.IssueAdminToken(jwtConfig.SigningMethod, jwtgo.MapClaims{}, jwtConfig.Timeout)
+	accessToken, err := jwt.IssueAdminToken(jwtConfig.SigningMethod, jwtGo.MapClaims{}, jwtConfig.Timeout)
 	if nil != err {
 		return fmt.Errorf("failed to issue JWT: %v", err)
 	}

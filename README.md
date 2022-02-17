@@ -17,11 +17,6 @@ WB docker image sources (including public-api endpoint configuration) are locate
 [![Go Report Card](https://goreportcard.com/badge/github.com/hellofresh/janus)](https://goreportcard.com/report/github.com/hellofresh/janus)
 [![Join us on slack](https://img.shields.io/badge/chat-on%20slack-brightgreen.svg)](https://join.slack.com/t/janus-gw/shared_invite/enQtNTM1MDE3Mjg0ODIxLTVhNmQwODBmYTE1MmI5MDZiY2ZhN2ZmOGFiMGZmZTZmMzMxMTQ1MzA0NzY4ODA5Zjg1YzczNzg0ZjcwYjQwMjA)
 
----
-
-**Note:** This project is in maintenance mode. There will be bug fixes, but no feature development.
-
----
 
 > An API Gateway written in Go
 
@@ -60,7 +55,7 @@ This API Gateway offers powerful, yet lightweight features that allows fine-grai
 * Rate Limiting, easily rate limit your API users, rate limiting is granular and can be applied on a per-key basis
 * CORS Filter, enable cors for your API, or even for specific endpoints
 * Multiple auth protocols, out of the box, we support JWT, OAuth 2.0 and Basic Auth access methods
-* Small [official](https://quay.io/repository/hellofresh/janus) docker image included
+* Small [official](https://hub.docker.com/repository/docker/hellofreshtech/janus) docker image included
 
 ## Installation
 
@@ -76,7 +71,7 @@ cd examples/front-proxy
 docker-compose up -d
 ```
 
-Now you should be able to get a response from the gateway. 
+Now you should be able to get a response from the gateway.
 
 Try the following command:
 

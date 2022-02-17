@@ -2,9 +2,9 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hellofresh/janus/pkg/api"
-	"github.com/hellofresh/janus/pkg/errors"
 	"github.com/hellofresh/janus/pkg/server"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -16,6 +16,7 @@ import (
 	_ "github.com/hellofresh/janus/pkg/plugin/compression"
 	_ "github.com/hellofresh/janus/pkg/plugin/cors"
 	_ "github.com/hellofresh/janus/pkg/plugin/oauth2"
+	_ "github.com/hellofresh/janus/pkg/plugin/organization"
 	_ "github.com/hellofresh/janus/pkg/plugin/rate"
 	_ "github.com/hellofresh/janus/pkg/plugin/requesttransformer"
 	_ "github.com/hellofresh/janus/pkg/plugin/responsetransformer"
@@ -34,14 +35,14 @@ type ServerStartOptions struct {
 }
 
 // NewServerStartCmd creates a new http server command
-func NewServerStartCmd(ctx context.Context) *cobra.Command {
+func NewServerStartCmd(ctx context.Context, version string) *cobra.Command {
 	opts := &ServerStartOptions{}
 
 	cmd := &cobra.Command{
 		Use:   "start",
 		Short: "Starts a Janus web server",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return RunServerStart(ctx, opts)
+			return RunServerStart(ctx, opts, version)
 		},
 	}
 
@@ -52,7 +53,7 @@ func NewServerStartCmd(ctx context.Context) *cobra.Command {
 }
 
 // RunServerStart is the run command to start Janus
-func RunServerStart(ctx context.Context, opts *ServerStartOptions) error {
+func RunServerStart(ctx context.Context, opts *ServerStartOptions, version string) error {
 	// all the logging configurations are initialised in initLog() later,
 	// but we try to initialise Writer (STDIN/STDERR/etc.) as early as possible manually
 	// to avoid loosing logs in systems heavily relying on them (e.g. running in docker)
@@ -71,7 +72,7 @@ func RunServerStart(ctx context.Context, opts *ServerStartOptions) error {
 
 	repo, err := api.BuildRepository(globalConfig.Database.DSN, globalConfig.Cluster.UpdateFrequency)
 	if err != nil {
-		return errors.Wrap(err, "could not build a repository for the database")
+		return fmt.Errorf("could not build a repository for the database: %w", err)
 	}
 	defer repo.Close()
 

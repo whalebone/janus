@@ -9,15 +9,15 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi"
-	"github.com/hellofresh/janus/pkg/observability"
-	"github.com/hellofresh/janus/pkg/proxy/balancer"
-	"github.com/hellofresh/janus/pkg/router"
 	"github.com/hellofresh/stats-go/bucket"
 	"github.com/hellofresh/stats-go/client"
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"go.opencensus.io/tag"
 	"go.opencensus.io/trace"
+
+	"github.com/hellofresh/janus/pkg/observability"
+	"github.com/hellofresh/janus/pkg/proxy/balancer"
+	"github.com/hellofresh/janus/pkg/router"
 )
 
 const (
@@ -76,7 +76,11 @@ func createDirector(proxyDefinition *Definition, balancer balancer.Balancer, sta
 			listenPath := matcher.Extract(proxyDefinition.ListenPath)
 
 			log.WithField("listen_path", listenPath).Debug("Stripping listen path")
-			path = strings.Replace(path, listenPath, "", 1)
+			if len(paramNames) > 0 {
+				path = stripPathWithParams(req, path, listenPath, paramNames)
+			} else {
+				path = strings.Replace(path, listenPath, "", 1)
+			}
 			if !strings.HasSuffix(target.Path, "/") && strings.HasSuffix(path, "/") {
 				path = path[:len(path)-1]
 			}
@@ -146,7 +150,7 @@ func applyParameters(req *http.Request, path string, paramNames []string) (strin
 		paramValue := chi.URLParam(req, paramName)
 
 		if len(paramValue) == 0 {
-			return "", errors.Errorf("unable to extract {%s} from request", paramName)
+			return "", fmt.Errorf("unable to extract {%s} from request", paramName)
 		}
 
 		path = strings.Replace(
@@ -192,4 +196,20 @@ func cleanSlashes(a string) string {
 	}
 
 	return a
+}
+
+// chiURLParam is created to allow for mocking of the chi.URLParam function.
+// This allowed for writing a quick unit test to check that the logic of the function works without having to deal with chi's context requirements.
+var chiURLParam = chi.URLParam
+// stripPathWithParams is intended to properly strip the listen path from the requested path when named parameters are used.
+// From left to right, it removes the first instance of each section of the listenPath and each paramName from the path.
+func stripPathWithParams(req *http.Request, path string, listenPath string, paramNames []string) string {
+	remove := strings.Split(listenPath, "/")
+	for i := 0; i < len(paramNames); i ++ {
+		remove = append(remove, chiURLParam(req, paramNames[i]))
+	}
+	for i := 1; i < len(remove); i++ {
+		path = strings.Replace(path, "/" + remove[i], "", 1)
+	}
+	return path
 }

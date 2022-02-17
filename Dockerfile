@@ -1,30 +1,34 @@
-FROM golang:1.12-alpine AS builder
+####### Start from a golang base image ###############
+FROM golang:1.13.6-buster as builder
+LABEL maintainer="Motiv Labs <dev@motivsolutions.com>"
+WORKDIR /app
+COPY ./ ./
 
-ARG VERSION='0.0.1-docker'
+RUN go mod download
 
-WORKDIR /janus
+RUN make build
 
-COPY . ./
+FROM ubuntu:20.04 as prod
 
-RUN apk add --update bash make git
-RUN export JANUS_BUILD_ONLY_DEFAULT=1 && \
-    export VERSION=$VERSION && \
-    make build
+COPY --from=builder /app/cassandra/schema.sql /usr/local/bin
 
-# ---
-
-FROM alpine
-
-COPY --from=builder /janus/dist/janus /
-
-RUN apk add --no-cache ca-certificates
-RUN mkdir -p /etc/janus/apis && \
+COPY --from=builder /app/dist/janus /bin/janus
+RUN chmod a+x /bin/janus && \
+    mkdir -p /etc/janus/apis && \
     mkdir -p /etc/janus/auth
 
-RUN apk add --update curl && \
-    rm -rf /var/cache/apk/*
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+  && rm -rf /var/lib/apt/lists/*
 
 HEALTHCHECK --interval=5s --timeout=5s --retries=3 CMD curl -f http://localhost:8081/status || exit 1
 
+# Use nobody user + group
+USER 65534:65534
+
 EXPOSE 8080 8081 8443 8444
-ENTRYPOINT ["/janus", "start"]
+ENTRYPOINT ["/bin/janus", "start"]
+
+# just to have it
+RUN ["/bin/janus", "--version"]
