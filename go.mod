@@ -42,8 +42,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.6.1
-	github.com/tidwall/gjson v1.1.0
-	github.com/tidwall/match v1.0.0 // indirect
+	github.com/tidwall/gjson v1.9.3
 	github.com/ulule/limiter/v3 v3.5.0
 	go.mongodb.org/mongo-driver v1.4.1
 	go.opencensus.io v0.23.0
