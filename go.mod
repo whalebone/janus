@@ -45,7 +45,7 @@ require (
 	github.com/tidwall/gjson v1.1.0
 	github.com/tidwall/match v1.0.0 // indirect
 	github.com/ulule/limiter/v3 v3.5.0
-	go.mongodb.org/mongo-driver v1.4.1
+	go.mongodb.org/mongo-driver v1.5.1
 	go.opencensus.io v0.23.0
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	golang.org/x/net v0.0.0-20201110031124-69a78807bb2b
