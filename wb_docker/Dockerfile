@@ -1,7 +1,7 @@
 # build from project root dir using 'docker build -f wb_docker/Dockerfile -t <tag> .'
-FROM golang:1.12-alpine AS builder
+FROM golang:1.15-alpine AS builder
 
-ARG VERSION='3.8.22-wb-0.0.4'
+ARG VERSION='4.0.0-wb-0.0.5'
 
 WORKDIR /janus
 
@@ -10,7 +10,7 @@ COPY . ./
 RUN apk add --update bash make git
 RUN export JANUS_BUILD_ONLY_DEFAULT=1 && \
     export VERSION=$VERSION && \
-    make deps build
+    make build
 
 # ---
 
