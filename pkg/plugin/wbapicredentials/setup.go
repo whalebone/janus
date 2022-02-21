@@ -10,6 +10,8 @@ import (
 )
 
 const (
+	pluginName = "wb_api_credentials_auth"
+
 	accessKeyHeaderDefault = "Wb-Access-Key"
 	secretKeyHeaderDefault = "Wb-Secret-Key"
 
@@ -27,7 +29,7 @@ type Config struct {
 }
 
 func init() {
-	plugin.RegisterPlugin("wb_api_credentials_auth", plugin.Plugin{
+	plugin.RegisterPlugin(pluginName, plugin.Plugin{
 		Action:   setup,
 		Validate: validateConfig,
 	})
