@@ -17,8 +17,8 @@ type CachedCredentials struct {
 // NewCachedCredentials is a constructor
 func NewCachedCredentials(clientID, userID string, loginSuccess bool) *CachedCredentials {
 	return &CachedCredentials{
-		ClientID: clientID,
-		UserID: userID,
+		ClientID:     clientID,
+		UserID:       userID,
 		LoginSuccess: loginSuccess,
 	}
 }
