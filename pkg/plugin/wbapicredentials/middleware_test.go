@@ -1,4 +1,4 @@
-package wbmicrocredentials
+package wbapicredentials
 
 import (
 	"encoding/json"
@@ -8,23 +8,20 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/hellofresh/janus/pkg/test"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAuthorizedAccess(t *testing.T) {
 	const (
 		accessKeyHeader = "Wb-Access-Key"
 		secretKeyHeader = "Wb-Secret-Key"
-		clientIDHeader  = "Wb-Client-Id"
-		userIDHeader    = "Wb-User-Id"
+		tokenHeader     = "Authorization"
 
 		accessKey = "accessKey"
 		secretKey = "secretKey"
-		clientID  = "clientId"
-		userID    = "userId"
+		token     = "token"
 	)
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -35,17 +32,16 @@ func TestAuthorizedAccess(t *testing.T) {
 		require.Equal(t, accessKey, body["access_key"])
 		require.Equal(t, secretKey, body["secret_key"])
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(fmt.Sprintf(`{"user_id": "%s","client_id":"%s"}`, userID, clientID)))
+		w.Write([]byte(fmt.Sprintf(`{"access_token": "%s", "irrelevant": "some val"}`, token)))
 	}))
 	defer ts.Close()
 
-	mw := NewWBMicroCredAuth(
+	mw := NewWBAPICredAuth(
 		wbClient(ts.URL),
-		NewCredentialsCache(time.Minute, time.Minute),
+		NewCache(time.Minute, time.Minute),
 		accessKeyHeader,
 		secretKeyHeader,
-		clientIDHeader,
-		userIDHeader,
+		tokenHeader,
 	)
 
 	req, err := http.NewRequest(http.MethodGet, "/", nil)
@@ -57,8 +53,7 @@ func TestAuthorizedAccess(t *testing.T) {
 	mw(http.HandlerFunc(test.Ping)).ServeHTTP(w, req)
 
 	// headers were added into the request
-	assert.Equal(t, clientID, req.Header.Get(clientIDHeader))
-	assert.Equal(t, userID, req.Header.Get(userIDHeader))
+	assert.Equal(t, token, req.Header.Get(tokenHeader))
 	// access key remained in the request (for tracking purposes)
 	assert.Equal(t, accessKey, req.Header.Get(accessKeyHeader))
 	// secret key removed from the request (from security reasons)
@@ -68,35 +63,25 @@ func TestAuthorizedAccess(t *testing.T) {
 	assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
 }
 
-func TestAuthorizedAccessUsingCache(t *testing.T) {
+func TestUnauthorizedAccessUsingCache(t *testing.T) {
 	const (
 		accessKeyHeader = "Access-Key"
 		secretKeyHeader = "Secret-Key"
-		clientIDHeader  = "Client-Id"
-		userIDHeader    = "User-Id"
+		tokenHeader     = "Irrelevant"
 
 		accessKey = "access-key"
-		secretKey = "secret-key"
-		clientID  = "client-id"
-		userID    = "user-id"
+		secretKey = "access-key"
 	)
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		t.Fatal("Middleware is not supposed to call the Login endpoint when credentials are cached")
+		t.Fatal("Middleware is not supposed to call the Login endpoint when credentials have been cached")
 	}))
 	defer ts.Close()
 
-	c := NewCredentialsCache(time.Minute, time.Minute)
-	c.Put(hashCredentials(accessKey, secretKey), NewCachedCredentials(clientID, userID, true))
+	c := NewCache(time.Minute, time.Minute)
+	c.Put(hashCredentials(accessKey, secretKey))
 
-	mw := NewWBMicroCredAuth(
-		wbClient(ts.URL),
-		c,
-		accessKeyHeader,
-		secretKeyHeader,
-		clientIDHeader,
-		userIDHeader,
-	)
+	mw := NewWBAPICredAuth(wbClient(ts.URL), c, accessKeyHeader, secretKeyHeader, tokenHeader)
 
 	req, err := http.NewRequest(http.MethodGet, "/", nil)
 	assert.NoError(t, err)
@@ -106,23 +91,17 @@ func TestAuthorizedAccessUsingCache(t *testing.T) {
 	w := httptest.NewRecorder()
 	mw(http.HandlerFunc(test.Ping)).ServeHTTP(w, req)
 
-	// the client id and user id header should be injected into the request
-	assert.Equal(t, clientID, req.Header.Get(clientIDHeader))
-	assert.Equal(t, userID, req.Header.Get(userIDHeader))
-	// access key remained in the request (for tracking purposes)
-	assert.Equal(t, accessKey, req.Header.Get(accessKeyHeader))
-	// secret key removed from the request (from security reasons)
-	assert.Empty(t, req.Header.Get(secretKeyHeader))
-	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
 	assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
 }
 
 func TestUnauthorizedMissingAccessKey(t *testing.T) {
 	const (
-		accessKeyHeader = "Access"
-		secretKeyHeader = "Secret"
-		clientIDHeader  = "Client"
-		userIDHeader    = "User"
+		accessKeyHeader = "AccessKey"
+		secretKeyHeader = "SecretKey"
+		tokenHeader     = "Irrelevant"
+
+		secretKey = "secret_key"
 	)
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -130,19 +109,12 @@ func TestUnauthorizedMissingAccessKey(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	mw := NewWBMicroCredAuth(
-		wbClient(ts.URL),
-		NewCredentialsCache(time.Minute, time.Minute),
-		accessKeyHeader,
-		secretKeyHeader,
-		clientIDHeader,
-		userIDHeader,
-	)
+	mw := NewWBAPICredAuth(wbClient(ts.URL), NewCache(time.Minute, time.Minute), accessKeyHeader, secretKeyHeader, tokenHeader)
 
 	req, err := http.NewRequest(http.MethodGet, "/", nil)
 	assert.NoError(t, err)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set(secretKeyHeader, "secretKey")
+	req.Header.Set(secretKeyHeader, secretKey)
 	w := httptest.NewRecorder()
 	mw(http.HandlerFunc(test.Ping)).ServeHTTP(w, req)
 
@@ -152,12 +124,11 @@ func TestUnauthorizedMissingAccessKey(t *testing.T) {
 
 func TestUnauthorizedMissingSecretKey(t *testing.T) {
 	const (
-		accessKeyHeader = "Access"
-		secretKeyHeader = "Secret"
-		clientIDHeader  = "Client"
-		userIDHeader    = "User"
+		accessKeyHeader = "AccessKey"
+		secretKeyHeader = "SecretKey"
+		tokenHeader     = "Irrelevant"
 
-		accessKey = "access"
+		accessKey = "access_key"
 	)
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -165,19 +136,12 @@ func TestUnauthorizedMissingSecretKey(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	mw := NewWBMicroCredAuth(
-		wbClient(ts.URL),
-		NewCredentialsCache(time.Minute, time.Minute),
-		accessKeyHeader,
-		secretKeyHeader,
-		clientIDHeader,
-		userIDHeader,
-	)
+	mw := NewWBAPICredAuth(wbClient(ts.URL), NewCache(time.Minute, time.Minute), accessKeyHeader, secretKeyHeader, tokenHeader)
 
 	req, err := http.NewRequest(http.MethodGet, "/", nil)
 	assert.NoError(t, err)
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set(accessKeyHeader, accessKey)
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add(accessKeyHeader, accessKey)
 	w := httptest.NewRecorder()
 	mw(http.HandlerFunc(test.Ping)).ServeHTTP(w, req)
 
@@ -187,10 +151,9 @@ func TestUnauthorizedMissingSecretKey(t *testing.T) {
 
 func TestUnauthorizedMissingCredentialKeys(t *testing.T) {
 	const (
-		accessKeyHeader = "Access"
-		secretKeyHeader = "Secret"
-		clientIDHeader  = "Client"
-		userIDHeader    = "User"
+		accessKeyHeader = "WBAccessKey"
+		secretKeyHeader = "WBSecretKey"
+		tokenHeader     = "Irrelevant"
 	)
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -198,18 +161,17 @@ func TestUnauthorizedMissingCredentialKeys(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	mw := NewWBMicroCredAuth(
+	mw := NewWBAPICredAuth(
 		wbClient(ts.URL),
-		NewCredentialsCache(time.Minute, time.Minute),
+		NewCache(time.Minute, time.Minute),
 		accessKeyHeader,
 		secretKeyHeader,
-		clientIDHeader,
-		userIDHeader,
+		tokenHeader,
 	)
 
 	req, err := http.NewRequest(http.MethodGet, "/", nil)
 	assert.NoError(t, err)
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Add("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	mw(http.HandlerFunc(test.Ping)).ServeHTTP(w, req)
 
@@ -219,13 +181,12 @@ func TestUnauthorizedMissingCredentialKeys(t *testing.T) {
 
 func TestUnauthorizedWrongCredentials(t *testing.T) {
 	const (
-		accessKeyHeader = "Access-Key"
-		secretKeyHeader = "Secret-Key"
-		clientIDHeader  = "Client-Id"
-		userIDHeader    = "User-Id"
+		accessKeyHeader = "WBAccessKey"
+		secretKeyHeader = "WBSecretKey"
+		tokenHeader     = "Irrelevant"
 
-		accessKey = "access-key"
-		secretKey = "secret-key"
+		accessKey = "access_key"
+		secretKey = "secret_key"
 	)
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -236,57 +197,16 @@ func TestUnauthorizedWrongCredentials(t *testing.T) {
 		require.Equal(t, accessKey, body["access_key"])
 		require.Equal(t, secretKey, body["secret_key"])
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{"error_code": 21,"error_message": "Invalid credentials"}`))
+		w.Write([]byte(`{"error_code": "INVALID_CREDENTIALS", "errors": ["invalid credentials"]}`))
 	}))
 	defer ts.Close()
 
-	mw := NewWBMicroCredAuth(
+	mw := NewWBAPICredAuth(
 		wbClient(ts.URL),
-		NewCredentialsCache(time.Minute, time.Minute),
+		NewCache(time.Minute, time.Minute),
 		accessKeyHeader,
 		secretKeyHeader,
-		clientIDHeader,
-		userIDHeader,
-	)
-
-	req, err := http.NewRequest(http.MethodGet, "/", nil)
-	assert.NoError(t, err)
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set(accessKeyHeader, accessKey)
-	req.Header.Set(secretKeyHeader, secretKey)
-	w := httptest.NewRecorder()
-	mw(http.HandlerFunc(test.Ping)).ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusUnauthorized, w.Code)
-	assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
-}
-
-func TestUnauthorizedWrongCredentialsCached(t *testing.T) {
-	const (
-		accessKeyHeader = "Access-Key"
-		secretKeyHeader = "Secret-Key"
-		clientIDHeader  = "Client-Id"
-		userIDHeader    = "User-Id"
-
-		accessKey = "access-key"
-		secretKey = "secret-key"
-	)
-
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		t.Fatal("Middleware is not supposed to call the Login endpoint when credentials cached")
-	}))
-	defer ts.Close()
-
-	c := NewCredentialsCache(time.Minute, time.Minute)
-	c.Put(hashCredentials(accessKey, secretKey), NewCachedCredentials("", "", false))
-
-	mw := NewWBMicroCredAuth(
-		wbClient(ts.URL),
-		c,
-		accessKeyHeader,
-		secretKeyHeader,
-		clientIDHeader,
-		userIDHeader,
+		tokenHeader,
 	)
 
 	req, err := http.NewRequest(http.MethodGet, "/", nil)
@@ -303,20 +223,18 @@ func TestUnauthorizedWrongCredentialsCached(t *testing.T) {
 
 func TestCacheExpires(t *testing.T) {
 	const (
-		accessKeyHeader = "Access-Key"
-		secretKeyHeader = "Secret-Key"
-		clientIDHeader  = "Client-Id"
-		userIDHeader    = "User-Id"
+		accessKeyHeader = "WBAccessKey"
+		secretKeyHeader = "WBSecretKey"
+		tokenHeader     = "WBToken"
 
 		accessKey = "access-key"
 		secretKey = "secret-key"
-		clientID  = "client"
-		userID    = "user"
+		token     = "authToken"
 	)
 
 	// cache with 1s expiration
-	c := NewCredentialsCache(time.Second, time.Minute)
-	c.Put(hashCredentials(accessKey, secretKey), NewCachedCredentials("", "", false))
+	c := NewCache(time.Second, time.Minute)
+	c.Put(hashCredentials(accessKey, secretKey))
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodPost, r.Method)
@@ -326,17 +244,16 @@ func TestCacheExpires(t *testing.T) {
 		require.Equal(t, accessKey, body["access_key"])
 		require.Equal(t, secretKey, body["secret_key"])
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(fmt.Sprintf(`{"user_id":"%s","client_id":"%s"}`, userID, clientID)))
+		w.Write([]byte(fmt.Sprintf(`{"access_token": "%s"}`, token)))
 	}))
 	defer ts.Close()
 
-	mw := NewWBMicroCredAuth(
+	mw := NewWBAPICredAuth(
 		wbClient(ts.URL),
 		c,
 		accessKeyHeader,
 		secretKeyHeader,
-		clientIDHeader,
-		userIDHeader,
+		tokenHeader,
 	)
 
 	req, err := http.NewRequest(http.MethodGet, "/", nil)
@@ -347,7 +264,7 @@ func TestCacheExpires(t *testing.T) {
 	wFail := httptest.NewRecorder()
 	mw(http.HandlerFunc(test.Ping)).ServeHTTP(wFail, req)
 
-	// first call must be rejected as unauthorized due to cached credentials
+	// first call must be rejected as unauthorized due to cache
 	assert.Equal(t, http.StatusUnauthorized, wFail.Code)
 	assert.Equal(t, "application/json", wFail.Header().Get("Content-Type"))
 
@@ -357,27 +274,22 @@ func TestCacheExpires(t *testing.T) {
 	// second call shoud be ok accepted because the call to Login endpoint returns OK
 	wSuccess := httptest.NewRecorder()
 	mw(http.HandlerFunc(test.Ping)).ServeHTTP(wSuccess, req)
-	// the headers should be injected into the request
-	assert.Equal(t, clientID, req.Header.Get(clientIDHeader))
-	assert.Equal(t, userID, req.Header.Get(userIDHeader))
-	// access key remained in the request (for tracking purposes)
-	assert.Equal(t, accessKey, req.Header.Get(accessKeyHeader))
-	// secret key removed from the request (from security reasons)
-	assert.Empty(t, req.Header.Get(secretKeyHeader))
+	// the Wb-* headers should be injected into the request
+	assert.Equal(t, token, req.Header.Get(tokenHeader))
 	assert.Equal(t, http.StatusOK, wSuccess.Code)
 	assert.Equal(t, "application/json", wSuccess.Header().Get("Content-Type"))
 }
 
-func TestLoginEndpointReturnsNoClientId(t *testing.T) {
+func TestLoginEndpointReturnsNoToken(t *testing.T) {
 	const (
-		accessKeyHeader = "Access-Key"
-		secretKeyHeader = "Secret-Key"
-		clientIDHeader  = "Client-Id"
-		userIDHeader    = "User-Id"
+		accessKeyHeader = "AccessKey"
+		secretKeyHeader = "SecretKey"
+		tokenHeader     = "Token"
 
 		accessKey = "access-key"
 		secretKey = "secret-key"
 	)
+
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, http.MethodPost, r.Method)
 		var body map[string]interface{}
@@ -387,17 +299,16 @@ func TestLoginEndpointReturnsNoClientId(t *testing.T) {
 		require.Equal(t, secretKey, body["secret_key"])
 		w.WriteHeader(http.StatusOK)
 		// client id is missng in the response
-		w.Write([]byte(`{"user_id": "user"}`))
+		w.Write([]byte(`{}`))
 	}))
 	defer ts.Close()
 
-	mw := NewWBMicroCredAuth(
+	mw := NewWBAPICredAuth(
 		wbClient(ts.URL),
-		NewCredentialsCache(time.Minute, time.Minute),
+		NewCache(time.Minute, time.Minute),
 		accessKeyHeader,
 		secretKeyHeader,
-		clientIDHeader,
-		userIDHeader,
+		tokenHeader,
 	)
 
 	req, err := http.NewRequest(http.MethodGet, "/", nil)
@@ -408,74 +319,27 @@ func TestLoginEndpointReturnsNoClientId(t *testing.T) {
 	w := httptest.NewRecorder()
 	mw(http.HandlerFunc(test.Ping)).ServeHTTP(w, req)
 
-	// since client id is not known the request must be rejected even if the credentials were ok
-	assert.Equal(t, http.StatusUnauthorized, w.Code)
-	assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
-}
-
-func TestLoginEndpointReturnsNoUserId(t *testing.T) {
-	const (
-		accessKeyHeader = "accessKey"
-		secretKeyHeader = "secretKey"
-		clientIDHeader  = "clientId"
-		userIDHeader    = "userId"
-
-		accessKey = "accessKey"
-		secretKey = "secretKey"
-	)
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(t, http.MethodPost, r.Method)
-		var body map[string]interface{}
-		err := json.NewDecoder(r.Body).Decode(&body)
-		require.NoError(t, err)
-		require.Equal(t, accessKey, body["access_key"])
-		require.Equal(t, secretKey, body["secret_key"])
-		w.WriteHeader(http.StatusOK)
-		// client id is missng in the response
-		w.Write([]byte(`{"client_id": "client"}`))
-	}))
-	defer ts.Close()
-
-	mw := NewWBMicroCredAuth(
-		wbClient(ts.URL),
-		NewCredentialsCache(time.Minute, time.Minute),
-		accessKeyHeader,
-		secretKeyHeader,
-		clientIDHeader,
-		userIDHeader,
-	)
-
-	req, err := http.NewRequest(http.MethodGet, "/", nil)
-	assert.NoError(t, err)
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set(accessKeyHeader, accessKey)
-	req.Header.Set(secretKeyHeader, secretKey)
-	w := httptest.NewRecorder()
-	mw(http.HandlerFunc(test.Ping)).ServeHTTP(w, req)
-
-	// since client id is not known the request must be rejected even if the credentials were ok
+	// since token is not known the request must be rejected even if the credentials were ok
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 	assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
 }
 
 func TestLoginEndpointUnreachable(t *testing.T) {
 	const (
-		accessKeyHeader = "accessKeyHeader"
-		secretKeyHeader = "secretKeyHeader"
-		clientIDHeader  = "clientIdHeader"
-		userIDHeader    = "userIdHeader"
+		accessKeyHeader = "AccessKey"
+		secretKeyHeader = "SecretKey"
+		tokenHeader     = "Token"
 
-		accessKey = "accessKey"
-		secretKey = "secretKey"
+		accessKey = "access-key"
+		secretKey = "secret-key"
 	)
 
-	mw := NewWBMicroCredAuth(
+	mw := NewWBAPICredAuth(
 		wbClient("http://enpoint:8080/doesnt/exits"),
-		NewCredentialsCache(time.Minute, time.Minute),
+		NewCache(time.Minute, time.Minute),
 		accessKeyHeader,
 		secretKeyHeader,
-		clientIDHeader,
-		userIDHeader,
+		tokenHeader,
 	)
 
 	req, err := http.NewRequest(http.MethodGet, "/", nil)
@@ -493,13 +357,12 @@ func TestLoginEndpointUnreachable(t *testing.T) {
 
 func TestLoginEndpointReturns500(t *testing.T) {
 	const (
-		accessKeyHeader = "Wb-Access-Key"
-		secretKeyHeader = "Wb-Secret-Key"
-		clientIDHeader  = "Wb-Client-Id"
-		userIDHeader    = "Wb-User-Id"
+		accessKeyHeader = "AccessKey"
+		secretKeyHeader = "SecretKey"
+		tokenHeader     = "Token"
 
-		accessKey = "accessKey"
-		secretKey = "secretKey"
+		accessKey = "access-key"
+		secretKey = "secret-key"
 	)
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -513,20 +376,19 @@ func TestLoginEndpointReturns500(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	mw := NewWBMicroCredAuth(
+	mw := NewWBAPICredAuth(
 		wbClient(ts.URL),
-		NewCredentialsCache(time.Minute, time.Minute),
+		NewCache(time.Minute, time.Minute),
 		accessKeyHeader,
 		secretKeyHeader,
-		clientIDHeader,
-		userIDHeader,
+		tokenHeader,
 	)
 
 	req, err := http.NewRequest(http.MethodGet, "/", nil)
 	assert.NoError(t, err)
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set(accessKeyHeader, accessKey)
-	req.Header.Set(secretKeyHeader, secretKey)
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add(accessKeyHeader, accessKey)
+	req.Header.Add(secretKeyHeader, secretKey)
 	w := httptest.NewRecorder()
 	mw(http.HandlerFunc(test.Ping)).ServeHTTP(w, req)
 
@@ -535,6 +397,6 @@ func TestLoginEndpointReturns500(t *testing.T) {
 	assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
 }
 
-func wbClient(loginEndpoint string) *WBMicroCredClient {
-	return &WBMicroCredClient{LoginEndpoint: loginEndpoint}
+func wbClient(loginEndpoint string) *WBAPICredClient {
+	return &WBAPICredClient{LoginEndpoint: loginEndpoint}
 }

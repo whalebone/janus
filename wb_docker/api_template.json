@@ -25,12 +25,17 @@
             }
         },
         {
-            "name": "wb_micro_credentials_auth",
+            "name": "@WB_AUTH_PLUGIN@",
             "enabled": @WB_AUTH_ENABLED@,
             "config": {
                 "login_endpoint": "@WB_AUTH_LOGIN_ENDPOINT@",
 	            "cache_ttl_secs": @WB_AUTH_CACHE_TTL_SECS@,
-	            "cache_cleanup_secs": @WB_AUTH_CACHE_CLEANUP_SECS@
+	            "cache_cleanup_secs": @WB_AUTH_CACHE_CLEANUP_SECS@,
+                "access_key_header": "@WB_AUTH_ACCESS_KEY_HEADER@",
+                "secret_key_header": "@WB_AUTH_SECRET_KEY_HEADER@",
+                "token_header": "@WB_AUTH_TOKEN_HEADER@",
+                "client_id_header": "@WB_AUTH_CLIENT_ID_HEADER@",
+                "user_id_header": "@WB_AUTH_USER_ID_HEADER@"
             }
         }
     ]

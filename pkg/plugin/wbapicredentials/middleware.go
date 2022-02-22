@@ -1,4 +1,4 @@
-package wbmicrocredentials
+package wbapicredentials
 
 import (
 	"crypto/sha256"
@@ -9,15 +9,13 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// NewWBMicroCredAuth is a HTTP basic auth middleware
-func NewWBMicroCredAuth(
-	wbClient *WBMicroCredClient,
-	cache *CredentialsCache,
+// NewWBAPICredAuth is a HTTP auth middleware using WB API credentials service
+func NewWBAPICredAuth(
+	wbClient *WBAPICredClient,
+	failuresCache *Cache,
 	accessKeyHeader,
 	secretKeyHeader,
-	clientIDHeader,
-	userIDHeader string,
-
+	tokenHeader string,
 ) func(http.Handler) http.Handler {
 	return func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -30,44 +28,34 @@ func NewWBMicroCredAuth(
 			}
 			// hashed access key and secret key to be used as cache key
 			hashedCred := hashCredentials(wbAccessKey, wbSecretKey)
-			// client id as returned from WB microCredentials service after login call
-			var clientID string
-			var userID string
 			foundInCache := false
 			// cache doesn't have to be used, if not then it is nil
-			if cache != nil {
-				var cachedCred *CachedCredentials
-				if cachedCred, foundInCache = cache.Get(hashedCred); foundInCache {
-					if !cachedCred.LoginSuccess {
-						errors.Handler(w, r, ErrInvalidCredentials)
-						return
-					}
-					clientID = cachedCred.ClientID
-					userID = cachedCred.UserID
+			if failuresCache != nil {
+				// if credentials found in cache it means they're invalid
+				if foundInCache = failuresCache.Contains(hashedCred); foundInCache {
+					errors.Handler(w, r, ErrInvalidCredentials)
+					return
 				}
 			}
 			if !foundInCache {
-				var success bool
-				var err error
-				clientID, userID, success, err = wbClient.Login(wbAccessKey, wbSecretKey)
+				token, success, err := wbClient.Login(wbAccessKey, wbSecretKey)
 				if err != nil {
 					errors.Handler(w, r, ErrInvalidCredentials)
 					return
 				}
-				if cache != nil {
-					cache.Put(hashedCred, NewCachedCredentials(clientID, userID, success))
-				}
 				if !success {
+					if failuresCache != nil {
+						failuresCache.Put(hashedCred)
+					}
 					errors.Handler(w, r, ErrInvalidCredentials)
 					return
 				}
+				// add used identification headers
+				r.Header.Set(tokenHeader, token)
+				// remove secret key from the request header
+				r.Header.Del(secretKeyHeader)
+				handler.ServeHTTP(w, r)
 			}
-			// add used identification headers
-			r.Header.Set(clientIDHeader, clientID)
-			r.Header.Set(userIDHeader, userID)
-			// remove secret key from the request header
-			r.Header.Del(secretKeyHeader)
-			handler.ServeHTTP(w, r)
 		})
 	}
 }

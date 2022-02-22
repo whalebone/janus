@@ -1,4 +1,4 @@
-package wbmicrocredentials
+package wbapicredentials
 
 import (
 	"testing"
@@ -10,11 +10,11 @@ import (
 
 func TestSetup(t *testing.T) {
 	def := proxy.NewRouterDefinition(proxy.NewDefinition())
+
 	conf := make(plugin.Config)
 	conf["test"] = "asda"
 
-	err := setupMicroCredentials(def, conf)
-
+	err := setup(def, conf)
 	require.NoError(t, err)
 	middleware := def.Middleware()
 	require.Len(t, middleware, 1)
@@ -23,13 +23,11 @@ func TestSetup(t *testing.T) {
 func TestValidateConfig(t *testing.T) {
 	conf := make(plugin.Config)
 	conf["login_endpoint"] = "http://endpoint:8080/path/to/login"
-	conf["access_key_header"] = "access_key"
-	conf["secret_key_header"] = "secret_key"
-	conf["user_id_header"] = "user_id"
-	conf["client_id_header"] = "client_id"
+	conf["access_key_header"] = "Wb-Access-Key"
+	conf["secret_key_header"] = "Wb-Secret-Key"
+	conf["token_header"] = "Authorization"
 
 	valid, err := validateConfig(conf)
-
 	require.NoError(t, err)
 	require.True(t, valid)
 }
@@ -38,7 +36,6 @@ func TestValidateConfigMissingLoginEndpoint(t *testing.T) {
 	conf := make(plugin.Config)
 
 	valid, err := validateConfig(conf)
-
 	require.False(t, valid)
 	require.Error(t, err)
 	require.EqualError(t, err, "login_endpoint is missing")
@@ -50,7 +47,6 @@ func TestValidateConfigInvalidCacheTTL(t *testing.T) {
 	conf["cache_ttl_secs"] = -1
 
 	valid, err := validateConfig(conf)
-
 	require.False(t, valid)
 	require.Error(t, err)
 	require.EqualError(t, err, "cache_ttl_secs must be greater than or equal 0")
@@ -62,7 +58,6 @@ func TestValidateConfigMissingCacheCleanupInterval(t *testing.T) {
 	conf["cache_ttl_secs"] = 1
 
 	valid, err := validateConfig(conf)
-
 	require.False(t, valid)
 	require.Error(t, err)
 	require.EqualError(t, err, "cache_cleanup_secs must be specified and greater than 0")
@@ -75,7 +70,6 @@ func TestValidateConfigInvalidCacheCleanupInterval(t *testing.T) {
 	conf["cache_cleanup_secs"] = -1
 
 	valid, err := validateConfig(conf)
-
 	require.False(t, valid)
 	require.Error(t, err)
 	require.EqualError(t, err, "cache_cleanup_secs must be specified and greater than 0")
@@ -104,7 +98,7 @@ func TestValidateConfigMissingSecretKeyHeader(t *testing.T) {
 	require.EqualError(t, err, "secret_key_header must be set")
 }
 
-func TestValidateConfigMissingClientIDHeader(t *testing.T) {
+func TestValidateConfigMissingTokenHeader(t *testing.T) {
 	conf := make(plugin.Config)
 	conf["login_endpoint"] = "http://endpoint:8080/path/to/login"
 	conf["access_key_header"] = "access_key"
@@ -114,19 +108,5 @@ func TestValidateConfigMissingClientIDHeader(t *testing.T) {
 
 	require.False(t, valid)
 	require.Error(t, err)
-	require.EqualError(t, err, "client_id_header must be set")
-}
-
-func TestValidateConfigMissingUserIDHeader(t *testing.T) {
-	conf := make(plugin.Config)
-	conf["login_endpoint"] = "http://endpoint:8080/path/to/login"
-	conf["access_key_header"] = "access_key"
-	conf["secret_key_header"] = "secret_key"
-	conf["client_id_header"] = "client_id"
-
-	valid, err := validateConfig(conf)
-
-	require.False(t, valid)
-	require.Error(t, err)
-	require.EqualError(t, err, "user_id_header must be set")
+	require.EqualError(t, err, "token_header must be set")
 }

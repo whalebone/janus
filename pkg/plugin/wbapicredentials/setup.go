@@ -1,4 +1,4 @@
-package wbmicrocredentials
+package wbapicredentials
 
 import (
 	"errors"
@@ -11,12 +11,12 @@ import (
 )
 
 const (
-	pluginName = "wb_micro_credentials_auth"
+	pluginName = "wb_api_credentials_auth"
 
 	accessKeyHeaderDefault = "Wb-Access-Key"
 	secretKeyHeaderDefault = "Wb-Secret-Key"
-	clientIDHeaderDefault  = "Wb-Client-Id"
-	userIDHeaderDefault    = "Wb-User-Id"
+
+	tokenHeaderDefault = "Authorization"
 )
 
 // Config represents a rate limit config
@@ -26,18 +26,17 @@ type Config struct {
 	CacheCleanupIntervalSecs int    `json:"cache_cleanup_secs"`
 	AccessKeyHeader          string `json:"access_key_header"`
 	SecretKeyHeader          string `json:"secret_key_header"`
-	ClientIDHeader           string `json:"client_id_header"`
-	UserIDHeader             string `json:"user_id_header"`
+	TokenHeader              string `json:"token_header"`
 }
 
 func init() {
 	plugin.RegisterPlugin(pluginName, plugin.Plugin{
-		Action:   setupMicroCredentials,
+		Action:   setup,
 		Validate: validateConfig,
 	})
 }
 
-func setupMicroCredentials(def *proxy.RouterDefinition, rawConfig plugin.Config) error {
+func setup(def *proxy.RouterDefinition, rawConfig plugin.Config) error {
 	var config Config
 	err := plugin.Decode(rawConfig, &config)
 	if err != nil {
@@ -50,27 +49,23 @@ func setupMicroCredentials(def *proxy.RouterDefinition, rawConfig plugin.Config)
 	if config.SecretKeyHeader == "" {
 		config.SecretKeyHeader = secretKeyHeaderDefault
 	}
-	if config.ClientIDHeader == "" {
-		config.ClientIDHeader = clientIDHeaderDefault
-	}
-	if config.UserIDHeader == "" {
-		config.UserIDHeader = userIDHeaderDefault
+	if config.TokenHeader == "" {
+		config.TokenHeader = tokenHeaderDefault
 	}
 
-	var credentialsCache *CredentialsCache
+	var cache *Cache
 	if config.CacheTTLSecs != 0 {
-		credentialsCache = NewCredentialsCache(time.Duration(config.CacheTTLSecs)*time.Second,
+		cache = NewCache(time.Duration(config.CacheTTLSecs)*time.Second,
 			time.Duration(config.CacheCleanupIntervalSecs)*time.Second)
 	}
 
-	client := &WBMicroCredClient{LoginEndpoint: config.LoginEndpoint}
-	def.AddMiddleware(NewWBMicroCredAuth(
+	client := &WBAPICredClient{LoginEndpoint: config.LoginEndpoint}
+	def.AddMiddleware(NewWBAPICredAuth(
 		client,
-		credentialsCache,
+		cache,
 		config.AccessKeyHeader,
 		config.SecretKeyHeader,
-		config.ClientIDHeader,
-		config.UserIDHeader,
+		config.TokenHeader,
 	))
 	return nil
 }
@@ -96,11 +91,8 @@ func validateConfig(rawConfig plugin.Config) (bool, error) {
 	if strings.TrimSpace(config.SecretKeyHeader) == "" {
 		return false, errors.New("secret_key_header must be set")
 	}
-	if strings.TrimSpace(config.ClientIDHeader) == "" {
-		return false, errors.New("client_id_header must be set")
-	}
-	if strings.TrimSpace(config.UserIDHeader) == "" {
-		return false, errors.New("user_id_header must be set")
+	if strings.TrimSpace(config.TokenHeader) == "" {
+		return false, errors.New("token_header must be set")
 	}
 
 	return govalidator.ValidateStruct(config)
