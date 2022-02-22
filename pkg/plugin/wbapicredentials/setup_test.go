@@ -23,6 +23,9 @@ func TestSetup(t *testing.T) {
 func TestValidateConfig(t *testing.T) {
 	conf := make(plugin.Config)
 	conf["login_endpoint"] = "http://endpoint:8080/path/to/login"
+	conf["access_key_header"] = "Wb-Access-Key"
+	conf["secret_key_header"] = "Wb-Secret-Key"
+	conf["token_header"] = "Authorization"
 
 	valid, err := validateConfig(conf)
 	require.NoError(t, err)
@@ -70,4 +73,40 @@ func TestValidateConfigInvalidCacheCleanupInterval(t *testing.T) {
 	require.False(t, valid)
 	require.Error(t, err)
 	require.EqualError(t, err, "cache_cleanup_secs must be specified and greater than 0")
+}
+
+func TestValidateConfigMissingAccessKeyHeader(t *testing.T) {
+	conf := make(plugin.Config)
+	conf["login_endpoint"] = "http://endpoint:8080/path/to/login"
+
+	valid, err := validateConfig(conf)
+
+	require.False(t, valid)
+	require.Error(t, err)
+	require.EqualError(t, err, "access_key_header must be set")
+}
+
+func TestValidateConfigMissingSecretKeyHeader(t *testing.T) {
+	conf := make(plugin.Config)
+	conf["login_endpoint"] = "http://endpoint:8080/path/to/login"
+	conf["access_key_header"] = "access_key"
+
+	valid, err := validateConfig(conf)
+
+	require.False(t, valid)
+	require.Error(t, err)
+	require.EqualError(t, err, "secret_key_header must be set")
+}
+
+func TestValidateConfigMissingTokenHeader(t *testing.T) {
+	conf := make(plugin.Config)
+	conf["login_endpoint"] = "http://endpoint:8080/path/to/login"
+	conf["access_key_header"] = "access_key"
+	conf["secret_key_header"] = "secret_key"
+
+	valid, err := validateConfig(conf)
+
+	require.False(t, valid)
+	require.Error(t, err)
+	require.EqualError(t, err, "token_header must be set")
 }

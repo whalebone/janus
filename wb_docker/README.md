@@ -32,9 +32,15 @@
 - `WB_API_<i>_RATE_LIMIT_ENABLED` - rate limiting enabled or disabled for WB api (optional; true or false; default true)
 - `WB_API_<i>_RATE_LIMIT_VALUE` - see [rate limit property](../docs/plugins/rate_limit.md)
 
-##### Upstream WB api requests authentications using micro credentials service
+##### Upstream WB api requests authentications using wb auth services
 
+- `WB_API_<i>_WB_AUTH_PLUGIN` - authentication plugin to be used for auth process (mandatory, values: wb_micro_credentials_auth, wb_api_credentials_auth)
 - `WB_API_<i>_WB_AUTH_ENABLED` - authentication enabled or disabled (optional; true or false; default true)
-- `WB_API_<i>_WB_AUTH_LOGIN_ENDPOINT` - URL of microCredentials [Login](https://app.swaggerhub.com/apis-docs/whalebone/microCredentials/1.0.0#/Credentials/post_login) endpoint
-- `WB_API_<i>_WB_AUTH_CACHE_TTL_SECS` - cache expiration interval in seconds (if set to 0 cache will not be used)
-- `WB_API_<i>_WB_AUTH_CACHE_CLEANUP_SECS` - expired cached records cleanup interval in secods (default )
+- `WB_API_<i>_WB_AUTH_LOGIN_ENDPOINT` - URL of the service login POST endpoint (mandatory)
+- `WB_API_<i>_WB_AUTH_CACHE_TTL_SECS` - cache expiration interval in seconds (if set to 0 cache will not be used, default is 30s)
+- `WB_API_<i>_WB_AUTH_CACHE_CLEANUP_SECS` - expired cached records cleanup interval in secods (default is 60s)
+- `WB_API_<i>_WB_AUTH_ACCESS_KEY_HEADER` - name of the request header where access key is expected (default is Wb-Access-Key)
+- `WB_API_<i>_WB_AUTH_SECRET_KEY_HEADER` - name of the request header where secret key is expected (default is Wb-Secret-Key
+    sed -i "s|@WB_AUTH_CLIENT_ID_HEADER@|${WB_AUTH_CLIENT_ID_HEADER:-Wb-Client-Id}|g" ${API_CONF}
+    sed -i "s|@WB_AUTH_USER_ID_HEADER@|${WB_AUTH_USER_ID_HEADER:-Wb-User-Id}|g" ${API_CONF}
+- `WB_API_<i>_WB_AUTH_TOKEN_HEADER` - name of header where auth token will be injected (default is Authorization, valid option for wb_api_credentials_auth plugin only)

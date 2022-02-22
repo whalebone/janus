@@ -48,10 +48,16 @@ while [ -n "${API_NAME}" ]; do
     sed -i "s|@RATE_LIMIT_ENABLED@|${RATE_LIMIT_ENABLED:-true}|g" ${API_CONF}
     sed -i "s|@RATE_LIMIT_VALUE@|${RATE_LIMIT_VALUE:-5-M}|g" ${API_CONF}
 
+    sed -i "s|@WB_AUTH_PLUGIN@|${WB_AUTH_PLUGIN}|g" ${API_CONF}
     sed -i "s|@WB_AUTH_ENABLED@|${WB_AUTH_ENABLED:-true}|g" ${API_CONF}
     sed -i "s|@WB_AUTH_LOGIN_ENDPOINT@|${WB_AUTH_LOGIN_ENDPOINT}|g" ${API_CONF}
     sed -i "s|@WB_AUTH_CACHE_TTL_SECS@|${WB_AUTH_CACHE_TTL_SECS:-30}|g" ${API_CONF}
     sed -i "s|@WB_AUTH_CACHE_CLEANUP_SECS@|${WB_AUTH_CACHE_CLEANUP_SECS:-60}|g" ${API_CONF}
+    sed -i "s|@WB_AUTH_ACCESS_KEY_HEADER@|${WB_AUTH_ACCESS_KEY_HEADER:-Wb-Access-Key}|g" ${API_CONF}
+    sed -i "s|@WB_AUTH_SECRET_KEY_HEADER@|${WB_AUTH_SECRET_KEY_HEADER:-Wb-Secret-Key}|g" ${API_CONF}
+    sed -i "s|@WB_AUTH_TOKEN_HEADER@|${WB_AUTH_TOKEN_HEADER:-Authorization}|g" ${API_CONF}
+    sed -i "s|@WB_AUTH_CLIENT_ID_HEADER@|${WB_AUTH_CLIENT_ID_HEADER:-Wb-Client-Id}|g" ${API_CONF}
+    sed -i "s|@WB_AUTH_USER_ID_HEADER@|${WB_AUTH_USER_ID_HEADER:-Wb-User-Id}|g" ${API_CONF}
 
     i=$((i+1))
     API_ENV=WB_API_${i}

@@ -9,15 +9,16 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const (
-	accessKeyHeader = "Wb-Access-Key"
-	secretKeyHeader = "Wb-Secret-Key"
-	clientIDHeader  = "Wb-Client-Id"
-	userIDHeader    = "Wb-User-Id"
-)
-
 // NewWBMicroCredAuth is a HTTP basic auth middleware
-func NewWBMicroCredAuth(wbClient *WBMicroCredClient, cache *CredentialsCache) func(http.Handler) http.Handler {
+func NewWBMicroCredAuth(
+	wbClient *WBMicroCredClient,
+	cache *CredentialsCache,
+	accessKeyHeader,
+	secretKeyHeader,
+	clientIDHeader,
+	userIDHeader string,
+
+) func(http.Handler) http.Handler {
 	return func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			log.Debug("Starting wb_micro_credentials auth middleware")
