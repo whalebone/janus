@@ -41,6 +41,6 @@
 - `WB_API_<i>_WB_AUTH_CACHE_CLEANUP_SECS` - expired cached records cleanup interval in secods (default is 60s)
 - `WB_API_<i>_WB_AUTH_ACCESS_KEY_HEADER` - name of the request header where access key is expected (default is Wb-Access-Key)
 - `WB_API_<i>_WB_AUTH_SECRET_KEY_HEADER` - name of the request header where secret key is expected (default is Wb-Secret-Key
-    sed -i "s|@WB_AUTH_CLIENT_ID_HEADER@|${WB_AUTH_CLIENT_ID_HEADER:-Wb-Client-Id}|g" ${API_CONF}
-    sed -i "s|@WB_AUTH_USER_ID_HEADER@|${WB_AUTH_USER_ID_HEADER:-Wb-User-Id}|g" ${API_CONF}
+- `WB_API_<i>_WB_AUTH_CLIENT_ID_HEADER` - name of the request header where client id will be injected to (default is Wb-Client-Id, valid option for wb_micro_credentials_auth plugin only)
+- `WB_API_<i>_WB_AUTH_USER_ID_HEADER` name of the request header where user id will be injected to (default is Wb-User-Id, valid option for wb_micro_credentials_auth plugin only)
 - `WB_API_<i>_WB_AUTH_TOKEN_HEADER` - name of header where auth token will be injected (default is Authorization, valid option for wb_api_credentials_auth plugin only)
