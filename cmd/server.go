@@ -21,6 +21,7 @@ import (
 	_ "github.com/hellofresh/janus/pkg/plugin/requesttransformer"
 	_ "github.com/hellofresh/janus/pkg/plugin/responsetransformer"
 	_ "github.com/hellofresh/janus/pkg/plugin/retry"
+	_ "github.com/hellofresh/janus/pkg/plugin/wbapicredentials"
 	_ "github.com/hellofresh/janus/pkg/plugin/wbmicrocredentials"
 
 	// dynamically registered auth providers
