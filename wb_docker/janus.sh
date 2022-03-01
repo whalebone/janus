@@ -72,4 +72,4 @@ while [ -n "${API_NAME}" ]; do
 done
 
 # start the service
-${JANUS_BIN} -c ${JANUS_CONF} start
+exec ${JANUS_BIN} -c ${JANUS_CONF} start
