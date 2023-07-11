@@ -17,7 +17,7 @@ type Repository interface {
 // CassandraRepository represents a cassandra repository
 type CassandraRepository struct {
 	session wrapper.Holder
-	hash encrypt.Hash
+	hash    encrypt.Hash
 }
 
 func NewCassandraRepository(session wrapper.Holder) (*CassandraRepository, error) {
@@ -61,12 +61,12 @@ func (r *CassandraRepository) FindByUsername(username string) (*Organization, er
 	var organization Organization
 
 	err := r.session.GetSession().Query(
-		"SELECT username, organization, password " +
-			"FROM organization " +
+		"SELECT username, organization, password "+
+			"FROM organization "+
 			"WHERE username = ?",
 		username).Scan(&organization.Username, &organization.Organization, &organization.Password)
 
-	if err.Error() == "not found"{
+	if err.Error() == "not found" {
 		log.Debugf("organization not found")
 		err = ErrUserNotFound
 	} else if err != nil {
@@ -89,9 +89,9 @@ func (r *CassandraRepository) Add(organization *Organization) error {
 	}
 
 	err = r.session.GetSession().Query(
-		"UPDATE organization " +
-			"SET organization = ?, " +
-			"password = ? " +
+		"UPDATE organization "+
+			"SET organization = ?, "+
+			"password = ? "+
 			"WHERE username = ?",
 		organization.Organization, hash, organization.Username).Exec()
 
