@@ -1,15 +1,15 @@
 package organization
 
 import (
+	"net/http"
+
 	"github.com/hellofresh/janus/pkg/errors"
 	"github.com/hellofresh/janus/pkg/plugin/basic/encrypt"
 	log "github.com/sirupsen/logrus"
-	"net/http"
 )
 
-
-
 const organizationHeader = "X-Organization"
+
 // NewOrganization is a HTTP organization middleware
 func NewOrganization(organization Organization, repo Repository) func(handler http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {

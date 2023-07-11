@@ -3,13 +3,14 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"strconv"
+	"strings"
+	"time"
+
 	cass "github.com/hellofresh/janus/cassandra"
 	"github.com/hellofresh/janus/cassandra/wrapper"
 	"github.com/opentracing/opentracing-go"
 	log "github.com/sirupsen/logrus"
-	"strconv"
-	"strings"
-	"time"
 )
 
 // CassandraRepository represents a cassandra repository

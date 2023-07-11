@@ -5,7 +5,6 @@ linters:
   disable-all: true
   enable:
     - gofmt
-    - golint
     - goimports
   fast: false
 linters-settings:
