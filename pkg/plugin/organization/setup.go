@@ -2,6 +2,7 @@ package organization
 
 import (
 	"errors"
+
 	"github.com/hellofresh/janus/pkg/plugin"
 	"github.com/hellofresh/janus/pkg/plugin/basic"
 	"github.com/hellofresh/janus/pkg/proxy"
@@ -11,15 +12,15 @@ import (
 
 var (
 	repo        Repository
-	basicRepo basic.Repository
+	basicRepo   basic.Repository
 	adminRouter router.Router
 )
 
 // Organization represents the configuration to save the user and organization pair
 type Organization struct {
-	Username string `json:"username"`
-	Organization  string `json:"organization"`
-	Password string `json:"password"`
+	Username     string `json:"username"`
+	Organization string `json:"organization"`
+	Password     string `json:"password"`
 }
 
 func init() {

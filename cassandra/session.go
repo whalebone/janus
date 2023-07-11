@@ -3,6 +3,7 @@ package cassandra
 import (
 	"github.com/hellofresh/janus/cassandra/wrapper"
 )
+
 const (
 	// Cassandra cluster host
 	ClusterHostName = "db"

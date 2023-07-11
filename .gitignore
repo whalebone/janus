@@ -38,3 +38,4 @@ debug
 
 #Visual Studio Code files
 /.vscode
+*.code-workspace
