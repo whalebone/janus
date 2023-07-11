@@ -35,6 +35,7 @@ require (
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/onsi/ginkgo v1.13.0 // indirect
 	github.com/opentracing/opentracing-go v1.2.0
+	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/rafaeljesus/retry-go v0.0.0-20171214204623-5981a380a879
 	github.com/rs/cors v1.4.0
 	github.com/sirupsen/logrus v1.7.0

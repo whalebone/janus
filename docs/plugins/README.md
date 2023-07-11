@@ -11,6 +11,7 @@ Janus comes with a set of built in plugins that you can add to your API Definiti
 * [Rate Limit](rate_limit.md)
 * [Request Transformer](request_transformer.md)
 * [Compression](compression.md)
+* [WB Micro Credentials Auth](wb_micro_credentials_auth.md)
 
 ## How can I create a plugin?
 

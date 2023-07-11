@@ -1,0 +1,22 @@
+################################################################
+# Global configuration
+################################################################
+port = @HTTP_PORT@
+
+[log]
+  level = "@LOG_LEVEL@"
+
+################################################################
+# API configuration backend
+################################################################
+[web]
+  port = @ADMIN_HTTP_PORT@
+
+  [web.credentials]
+    secret = "@ADMIN_JWT_SECRET@"
+
+    [web.credentials.basic]
+    users = {admin = "@ADMIN_BASIC_PASS@"}
+
+[database]
+  dsn = "file:///etc/janus"
