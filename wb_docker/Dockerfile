@@ -49,7 +49,8 @@ ENV JANUS_BIN "${JANUS_ROOT}/janus"
 RUN mkdir -p ${JANUS_ROOT} && \
     mkdir -p ${API_CONF_DIR} && \
     mkdir -p /etc/janus/auth && \
-    chown appuser:appuser /etc/janus
+    chown appuser:appuser /etc/janus && \
+    chown appuser:appuser /etc/janus/apis
 
 COPY --from=builder /janus/dist/janus ${JANUS_BIN}
 RUN chmod u+x ${JANUS_BIN}
