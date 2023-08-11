@@ -1,5 +1,5 @@
 # build from project root dir using 'docker build -f wb_docker/Dockerfile -t <tag> .'
-FROM golang:1.20-alpine AS builder
+FROM golang:1.21-alpine AS builder
 
 ARG VERSION="dev-4.0.0-wb-0.0.0"
 
