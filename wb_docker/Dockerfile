@@ -35,7 +35,7 @@ COPY . ./
 RUN export JANUS_BUILD_ONLY_DEFAULT=1 && \
     export VERSION=$VERSION && \
     make build && \
-    CGO_ENABLED=0 go build -ldflags="-s -w -X main.version=$(VERSION)" -o "dist/entrypoint" ./wb_docker/entrypoint.go
+    CGO_ENABLED=0 go build -ldflags="-s -w" -o "dist/entrypoint" ./wb_docker/entrypoint.go
 
 #
 RUN chmod u+x dist/janus && \
