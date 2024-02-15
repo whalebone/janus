@@ -16,6 +16,12 @@ RUN adduser \
     --uid "${UID}" \
     "${USER}"
 
+# Create directories for runtime image
+RUN mkdir -p /opt/janus && \
+    mkdir -p /etc/janus/apis && \
+    mkdir -p /etc/janus/auth && \
+    chown -R ${UID}:${UID} /etc/janus
+
 # copy go mod and sum files
 COPY go.mod go.sum ./
 
@@ -28,37 +34,29 @@ COPY . ./
 
 RUN export JANUS_BUILD_ONLY_DEFAULT=1 && \
     export VERSION=$VERSION && \
-    make build
+    make build && \
+    CGO_ENABLED=0 go build -ldflags="-s -w -X main.version=$(VERSION)" -o "dist/entrypoint" ./wb_docker/entrypoint.go
+
+#
+RUN chmod u+x dist/janus && \
+    chmod u+x dist/entrypoint
 
 
 # runtime image
-FROM alpine
+FROM scratch
 
 COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /etc/group /etc/group
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=builder /opt/janus /opt/janus
+COPY --from=builder /etc/janus /etc/janus
 
-RUN apk add --no-cache curl sed
 
-ENV JANUS_ROOT="/opt/janus"
-ENV API_CONF_DIR "/etc/janus/apis"
-ENV JANUS_CONF "/etc/janus/janus.toml"
-ENV API_CONF_TEMPLATE "${JANUS_ROOT}/api_template.json"
-ENV JANUS_BIN "${JANUS_ROOT}/janus"
+COPY --from=builder --chown=${UID}:${UID} /janus/dist/janus /opt/janus/janus
+COPY --from=builder --chown=${UID}:${UID} /janus/dist/entrypoint /entrypoint
+COPY wb_docker/janus.toml /etc/janus/janus.toml
+COPY wb_docker/api_template.json /opt/janus/api_template.json
 
-RUN mkdir -p ${JANUS_ROOT} && \
-    mkdir -p ${API_CONF_DIR} && \
-    mkdir -p /etc/janus/auth && \
-    chown appuser:appuser /etc/janus && \
-    chown appuser:appuser /etc/janus/apis
+USER ${UID}:${UID}
 
-COPY --from=builder /janus/dist/janus ${JANUS_BIN}
-RUN chmod u+x ${JANUS_BIN}
-COPY wb_docker/janus.toml ${JANUS_CONF}
-COPY wb_docker/janus.sh ${JANUS_ROOT}/janus.sh
-RUN chmod u+x ${JANUS_ROOT}/janus.sh
-COPY wb_docker/api_template.json ${API_CONF_TEMPLATE}
-
-USER appuser:appuser
-
-ENTRYPOINT ["/opt/janus/janus.sh"]
+ENTRYPOINT ["/entrypoint"]
