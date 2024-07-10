@@ -13,11 +13,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
-          # Optional: version of golangci-lint to use in form of v1.2 or v1.2.3 or `latest` to use the latest version
+          go-version-file: "go.mod"
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
           version: latest
 
   test:
@@ -47,21 +52,25 @@ jobs:
           - "8080"
 
     steps:
-      - name: Set up Go
-        uses: actions/setup-go@v3
-        with:
-          go-version: "1.21"
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: "go.mod"
+
       - name: Run unit tests
         if: success()
         run: make test-unit
+
       - name: Run integration tests
         if: success()
         run: make test-integration
         env:
           DYNAMIC_UPSTREAMS_PORT: ${{ job.services.upstreams.ports[8080] }}
           DYNAMIC_AUTH_PORT: ${{ job.services.auth_service.ports[8080] }}
+
       - name: Run features tests
         if: success()
         run: make test-features
