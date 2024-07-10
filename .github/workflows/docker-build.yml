@@ -8,7 +8,7 @@ jobs:
   Built-login-push:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Build and push image
         run: |-
           VERSION_TAG=$(git describe --exact-match --tags 2>/dev/null)
