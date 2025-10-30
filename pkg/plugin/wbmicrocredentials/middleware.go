@@ -49,7 +49,7 @@ func NewWBMicroCredAuth(
 			if !foundInCache {
 				var success bool
 				var err error
-				clientID, userID, success, err = wbClient.Login(wbAccessKey, wbSecretKey)
+				clientID, userID, success, err = wbClient.Login(r.Context(), wbAccessKey, wbSecretKey)
 				if err != nil {
 					errors.Handler(w, r, ErrInvalidCredentials)
 					return

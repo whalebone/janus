@@ -9,7 +9,9 @@ import (
 	"github.com/hellofresh/stats-go/client"
 	log "github.com/sirupsen/logrus"
 	"go.opencensus.io/plugin/ochttp"
+	"go.opencensus.io/plugin/ochttp/propagation/tracecontext"
 
+	"github.com/hellofresh/janus/pkg/observability/otel"
 	"github.com/hellofresh/janus/pkg/proxy/balancer"
 	"github.com/hellofresh/janus/pkg/proxy/transport"
 	"github.com/hellofresh/janus/pkg/router"
@@ -62,13 +64,16 @@ func (p *Register) Add(definition *RouterDefinition) error {
 	handler := NewBalancedReverseProxy(definition.Definition, balancerInstance, p.statsClient)
 	handler.FlushInterval = p.flushInterval
 	handler.Transport = &ochttp.Transport{
-		Base: transport.New(
-			transport.WithIdleConnTimeout(p.idleConnTimeout),
-			transport.WithIdleConnPurgeTicker(p.idleConnPurgeTicker),
-			transport.WithInsecureSkipVerify(definition.InsecureSkipVerify),
-			transport.WithDialTimeout(time.Duration(definition.ForwardingTimeouts.DialTimeout)),
-			transport.WithResponseHeaderTimeout(time.Duration(definition.ForwardingTimeouts.ResponseHeaderTimeout)),
-		),
+		Base: &otel.RequestIDPropagatingTransport{
+			RoundTripper: transport.New(
+				transport.WithIdleConnTimeout(p.idleConnTimeout),
+				transport.WithIdleConnPurgeTicker(p.idleConnPurgeTicker),
+				transport.WithInsecureSkipVerify(definition.InsecureSkipVerify),
+				transport.WithDialTimeout(time.Duration(definition.ForwardingTimeouts.DialTimeout)),
+				transport.WithResponseHeaderTimeout(time.Duration(definition.ForwardingTimeouts.ResponseHeaderTimeout)),
+			),
+		},
+		Propagation: &tracecontext.HTTPFormat{}, // Use W3C Trace Context for distributed tracing
 	}
 
 	if p.matcher.Match(definition.ListenPath) {

@@ -2,10 +2,13 @@ package wbapicredentials
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 
+	"github.com/hellofresh/janus/pkg/observability/otel"
 	log "github.com/sirupsen/logrus"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 // LoginRequestBody is json struct for micro credentials login request body representation
@@ -25,19 +28,24 @@ type WBAPICredClient struct {
 }
 
 // Login calls WB micro credentials service Login endpoint
-func (wbClient *WBAPICredClient) Login(wbAccessKey, wbSecretKey string) (token string, success bool, err error) {
+func (wbClient *WBAPICredClient) Login(ctx context.Context, wbAccessKey, wbSecretKey string) (token string, success bool, err error) {
 	loginReqBody, err := json.Marshal(&LoginRequestBody{AccessKey: wbAccessKey, SecretKey: wbSecretKey})
 	if err != nil {
 		log.WithError(err).Error("Cannot marshall access key and secret key to json")
 		return "", false, err
 	}
-	req, err := http.NewRequest(http.MethodPost, wbClient.LoginEndpoint, bytes.NewBuffer(loginReqBody))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, wbClient.LoginEndpoint, bytes.NewBuffer(loginReqBody))
 	if err != nil {
 		log.WithError(err).Error("Cannot create login request")
 		return "", false, err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	client := &http.Client{}
+
+	client := &http.Client{
+		Transport: &otel.RequestIDPropagatingTransport{
+			RoundTripper: otelhttp.NewTransport(http.DefaultTransport),
+		},
+	}
 	response, err := client.Do(req)
 	if err != nil {
 		log.WithError(err).Error("Cannot perform login request")

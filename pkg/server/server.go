@@ -10,7 +10,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/hellofresh/stats-go/client"
 	log "github.com/sirupsen/logrus"
-	"go.opencensus.io/plugin/ochttp/propagation/b3"
+	"go.opencensus.io/plugin/ochttp/propagation/tracecontext"
 
 	"github.com/hellofresh/janus/pkg/api"
 	"github.com/hellofresh/janus/pkg/config"
@@ -290,7 +290,7 @@ func (s *Server) createRouter() router.Router {
 
 	// Add DebugTraceKey middleware which returns debug header with the Trace ID
 	if s.globalConfig.Tracing.DebugTraceKey != "" {
-		r.Use(middleware.DebugTrace(&b3.HTTPFormat{}, s.globalConfig.Tracing.DebugTraceKey))
+		r.Use(middleware.DebugTrace(&tracecontext.HTTPFormat{}, s.globalConfig.Tracing.DebugTraceKey))
 	}
 
 	r.Use(

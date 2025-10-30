@@ -38,7 +38,7 @@ func NewWBAPICredAuth(
 				}
 			}
 			if !foundInCache {
-				token, success, err := wbClient.Login(wbAccessKey, wbSecretKey)
+				token, success, err := wbClient.Login(r.Context(), wbAccessKey, wbSecretKey)
 				if err != nil {
 					errors.Handler(w, r, ErrInvalidCredentials)
 					return
