@@ -29,6 +29,21 @@
 **Standard OpenTelemetry environment variables are also supported:**
 - `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_NAME`, `OTEL_TRACES_SAMPLER_ARG`, `OTEL_RESOURCE_ATTRIBUTES`, etc.
 
+##### Metrics Configuration (Prometheus)
+
+- `STATS_EXPORTER` - metrics backend: "prometheus" to enable Prometheus metrics, or empty to disable (optional, default "")
+
+**When STATS_EXPORTER="prometheus":**
+- Metrics are exposed at `http://<ADMIN_HTTP_PORT>/metrics`
+- Available metrics include:
+  - `http_server_response_count_by_path_code_and_method` - request counts by path, status code, and method
+  - `http_server_request_latency_by_path_and_method` - request latency histograms
+  - `http_server_request_size` - request size distribution
+  - `http_proxy_request_count_by_path` - upstream request counts
+  - `http_proxy_request_latency_by_path` - upstream request latency
+  - `plugin_oauth2_*` - OAuth2 authentication metrics
+  - `plugin_jwt_manager_validation_error_total` - JWT validation errors
+
 ##### Whalebone API upstream endpoints configuration (values used in [api\_template.json](api\_template.json))
 
 `i` - is whole number (0, 1, 2...) that allows to specify more WB api upstreams each

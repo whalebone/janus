@@ -81,6 +81,9 @@ func prepareJanusConfiguration(janusConf string) error {
 		"@TRACING_OTLP_ENDPOINT@": getEnv("TRACING_OTLP_ENDPOINT", ""),
 		"@TRACING_OTLP_PROTOCOL@": getEnv("TRACING_OTLP_PROTOCOL", "grpc"),
 		"@TRACING_OTLP_INSECURE@": getEnv("TRACING_OTLP_INSECURE", "true"),
+
+		// Stats/Metrics configuration
+		"@STATS_EXPORTER@": getEnv("STATS_EXPORTER", ""),
 	}
 
 	return replaceInFileMultiple(janusConf, replacements)

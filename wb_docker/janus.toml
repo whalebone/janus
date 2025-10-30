@@ -34,3 +34,9 @@ port = @HTTP_PORT@
     endpoint = "@TRACING_OTLP_ENDPOINT@"
     protocol = "@TRACING_OTLP_PROTOCOL@"
     insecure = @TRACING_OTLP_INSECURE@
+
+################################################################
+# Metrics/Stats configuration (Prometheus via OpenCensus)
+################################################################
+[stats]
+  exporter = "@STATS_EXPORTER@"
