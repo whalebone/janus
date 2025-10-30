@@ -115,6 +115,7 @@ type Tracing struct {
 	DebugTraceKey    string        `envconfig:"TRACING_DEBUG_TRACE_KEY"`
 	IsPublicEndpoint bool          `envconfig:"TRACING_IS_PUBLIC_ENDPOINT"`
 	JaegerTracing    JaegerTracing `mapstructure:"jaeger"`
+	OTLPTracing      OTLPTracing   `mapstructure:"otlp"`
 }
 
 // JaegerTracing holds the Jaeger tracing configuration
@@ -122,6 +123,13 @@ type JaegerTracing struct {
 	SamplingServerURL  string `envconfig:"TRACING_JAEGER_SAMPLING_SERVER_URL"`
 	SamplingServerHost string `envconfig:"JAEGER_AGENT_HOST"`
 	SamplingServerPort string `envconfig:"JAEGER_AGENT_PORT"`
+}
+
+// OTLPTracing holds the OTLP (OpenTelemetry Protocol) tracing configuration
+type OTLPTracing struct {
+	Endpoint string `envconfig:"TRACING_OTLP_ENDPOINT" mapstructure:"endpoint"`
+	Protocol string `envconfig:"TRACING_OTLP_PROTOCOL" mapstructure:"protocol"` // "grpc" or "http"
+	Insecure bool   `envconfig:"TRACING_OTLP_INSECURE" mapstructure:"insecure"`
 }
 
 func init() {

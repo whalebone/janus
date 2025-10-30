@@ -10,8 +10,10 @@ import (
 
 	"contrib.go.opencensus.io/exporter/jaeger"
 	"contrib.go.opencensus.io/exporter/prometheus"
+	"github.com/google/uuid"
 	"github.com/hellofresh/janus/pkg/config"
 	obs "github.com/hellofresh/janus/pkg/observability"
+	"github.com/hellofresh/janus/pkg/observability/otel"
 	"github.com/hellofresh/logging-go"
 	_trace "github.com/hellofresh/opencensus-go-extras/trace"
 	"github.com/hellofresh/stats-go"
@@ -161,6 +163,9 @@ func initTracingExporter() {
 		fallthrough
 	case obs.Zipkin:
 		logger.Warn("Not implemented!")
+	case obs.OTLP:
+		initOTLPExporter()
+		return
 	case obs.Jaeger:
 		err = initJaegerExporter()
 	default:
@@ -213,4 +218,26 @@ func initJaegerExporter() (err error) {
 		trace.RegisterExporter(jaegerExporter)
 	}
 	return err
+}
+
+func initOTLPExporter() {
+	err := otel.InitOTelBridge(&otel.Config{
+		ServiceName:       globalConfig.Tracing.ServiceName,
+		ServiceVersion:    "4.0.0",
+		ServiceInstanceID: uuid.New().String(),
+		SampleFraction:    globalConfig.Tracing.SamplingParam,
+		OTLPEndpoint:      globalConfig.Tracing.OTLPTracing.Endpoint,
+		OTLPProtocol:      globalConfig.Tracing.OTLPTracing.Protocol,
+		OTLPInsecure:      globalConfig.Tracing.OTLPTracing.Insecure,
+	})
+
+	if err != nil {
+		log.WithError(err).Panic("Failed to initialize OTLP bridge")
+	}
+
+	log.WithFields(log.Fields{
+		"endpoint":        globalConfig.Tracing.OTLPTracing.Endpoint,
+		"protocol":        globalConfig.Tracing.OTLPTracing.Protocol,
+		"sample_fraction": globalConfig.Tracing.SamplingParam,
+	}).Info("OTLP tracing bridge initialized")
 }
