@@ -71,6 +71,16 @@ func prepareJanusConfiguration(janusConf string) error {
 		"@ADMIN_HTTP_PORT@":  getEnv("ADMIN_HTTP_PORT", "8081"),
 		"@ADMIN_JWT_SECRET@": os.Getenv("ADMIN_JWT_SECRET"),
 		"@ADMIN_BASIC_PASS@": os.Getenv("ADMIN_BASIC_PASS"),
+
+		// Tracing configuration
+		"@TRACING_EXPORTER@":       getEnv("TRACING_EXPORTER", ""),
+		"@TRACING_SERVICE_NAME@":   getEnv("TRACING_SERVICE_NAME", "janus"),
+		"@TRACING_SAMPLING_PARAM@": getEnv("TRACING_SAMPLING_PARAM", "1.0"),
+
+		// OTLP configuration (when TRACING_EXPORTER=otlp)
+		"@TRACING_OTLP_ENDPOINT@": getEnv("TRACING_OTLP_ENDPOINT", ""),
+		"@TRACING_OTLP_PROTOCOL@": getEnv("TRACING_OTLP_PROTOCOL", "grpc"),
+		"@TRACING_OTLP_INSECURE@": getEnv("TRACING_OTLP_INSECURE", "true"),
 	}
 
 	return replaceInFileMultiple(janusConf, replacements)
