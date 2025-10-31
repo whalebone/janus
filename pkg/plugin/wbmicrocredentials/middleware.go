@@ -6,8 +6,10 @@ import (
 	"net/http"
 
 	"github.com/hellofresh/janus/pkg/errors"
+	"github.com/hellofresh/janus/pkg/observability"
 	log "github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 )
 
@@ -38,6 +40,11 @@ func NewWBMicroCredAuth(
 				errors.Handler(w, r, ErrNotAuthorized)
 				return
 			}
+
+			span.SetAttributes(
+				attribute.String("request.id", observability.RequestIDFromContext(r.Context())),
+			)
+
 			// hashed access key and secret key to be used as cache key
 			hashedCred := hashCredentials(wbAccessKey, wbSecretKey)
 			// client id as returned from WB microCredentials service after login call
