@@ -9,7 +9,9 @@ import (
 	"github.com/hellofresh/stats-go/client"
 	log "github.com/sirupsen/logrus"
 	"go.opencensus.io/plugin/ochttp"
+	"go.opencensus.io/plugin/ochttp/propagation/tracecontext"
 
+	"github.com/hellofresh/janus/pkg/observability/otel"
 	"github.com/hellofresh/janus/pkg/proxy/balancer"
 	"github.com/hellofresh/janus/pkg/proxy/transport"
 	"github.com/hellofresh/janus/pkg/router"
@@ -62,27 +64,45 @@ func (p *Register) Add(definition *RouterDefinition) error {
 	handler := NewBalancedReverseProxy(definition.Definition, balancerInstance, p.statsClient)
 	handler.FlushInterval = p.flushInterval
 	handler.Transport = &ochttp.Transport{
-		Base: transport.New(
-			transport.WithIdleConnTimeout(p.idleConnTimeout),
-			transport.WithIdleConnPurgeTicker(p.idleConnPurgeTicker),
-			transport.WithInsecureSkipVerify(definition.InsecureSkipVerify),
-			transport.WithDialTimeout(time.Duration(definition.ForwardingTimeouts.DialTimeout)),
-			transport.WithResponseHeaderTimeout(time.Duration(definition.ForwardingTimeouts.ResponseHeaderTimeout)),
-		),
+		Base: &otel.RequestIDPropagatingTransport{
+			RoundTripper: transport.New(
+				transport.WithIdleConnTimeout(p.idleConnTimeout),
+				transport.WithIdleConnPurgeTicker(p.idleConnPurgeTicker),
+				transport.WithInsecureSkipVerify(definition.InsecureSkipVerify),
+				transport.WithDialTimeout(time.Duration(definition.ForwardingTimeouts.DialTimeout)),
+				transport.WithResponseHeaderTimeout(time.Duration(definition.ForwardingTimeouts.ResponseHeaderTimeout)),
+			),
+		},
+		Propagation: &tracecontext.HTTPFormat{}, // Use W3C Trace Context for distributed tracing
 	}
 
 	if p.matcher.Match(definition.ListenPath) {
-		p.doRegister(p.matcher.Extract(definition.ListenPath), definition, &ochttp.Handler{Handler: handler, IsPublicEndpoint: p.isPublicEndpoint})
+		p.doRegister(p.matcher.Extract(definition.ListenPath), definition, handler, p.isPublicEndpoint)
 	}
 
-	p.doRegister(definition.ListenPath, definition, &ochttp.Handler{Handler: handler, IsPublicEndpoint: p.isPublicEndpoint})
+	p.doRegister(definition.ListenPath, definition, handler, p.isPublicEndpoint)
 	return nil
 }
 
-func (p *Register) doRegister(listenPath string, def *RouterDefinition, handler http.Handler) {
+func (p *Register) doRegister(listenPath string, def *RouterDefinition, handler http.Handler, isPublicEndpoint bool) {
 	log.WithFields(log.Fields{
 		"listen_path": listenPath,
 	}).Debug("Registering a route")
+
+	// Apply middleware to handler first (auth, host matcher, stats tagger)
+	wrappedHandler := handler
+	for i := len(def.middleware) - 1; i >= 0; i-- {
+		wrappedHandler = def.middleware[i](wrappedHandler)
+	}
+
+	// Then wrap with ochttp.Handler for server-side tracing (creates parent span)
+	ochttpHandler := &ochttp.Handler{
+		Handler:          wrappedHandler,
+		IsPublicEndpoint: isPublicEndpoint,
+		FormatSpanName: func(r *http.Request) string {
+			return r.Method + " " + r.URL.Path
+		},
+	}
 
 	if strings.Index(listenPath, "/") != 0 {
 		log.WithField("listen_path", listenPath).
@@ -90,9 +110,9 @@ func (p *Register) doRegister(listenPath string, def *RouterDefinition, handler 
 	} else {
 		for _, method := range def.Methods {
 			if strings.ToUpper(method) == methodAll {
-				p.router.Any(listenPath, handler.ServeHTTP, def.middleware...)
+				p.router.Any(listenPath, ochttpHandler.ServeHTTP)
 			} else {
-				p.router.Handle(strings.ToUpper(method), listenPath, handler.ServeHTTP, def.middleware...)
+				p.router.Handle(strings.ToUpper(method), listenPath, ochttpHandler.ServeHTTP)
 			}
 		}
 	}

@@ -14,9 +14,39 @@
 - `ADMIN_JWT_SECRET` - secret password for JWT tokens encryption for admin API
 - `ADMIN_BASIC_PASS` - password for admin basic auth to admin API
 
+##### Distributed Tracing Configuration (OpenTelemetry/OpenCensus)
+
+- `TRACING_EXPORTER` - tracing backend: "otlp" for OpenTelemetry (recommended), "jaeger" for legacy Jaeger, or empty to disable (optional, default "")
+- `TRACING_SERVICE_NAME` - service name in traces (optional, default "janus")
+- `TRACING_SAMPLING_PARAM` - sampling rate: 1.0 = 100%, 0.1 = 10%, etc. (optional, default 1.0)
+
+**When TRACING_EXPORTER="otlp" (OpenTelemetry):**
+
+- `TRACING_OTLP_ENDPOINT` - OTLP endpoint, e.g., "otel-collector:4317" for gRPC or "otel-collector:4318" for HTTP (mandatory when using otlp)
+- `TRACING_OTLP_PROTOCOL` - protocol: "grpc" or "http" (optional, default "grpc")
+- `TRACING_OTLP_INSECURE` - use insecure connection (no TLS): "true" or "false" (optional, default "true")
+
+**Standard OpenTelemetry environment variables are also supported:**
+- `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_NAME`, `OTEL_TRACES_SAMPLER_ARG`, `OTEL_RESOURCE_ATTRIBUTES`, etc.
+
+##### Metrics Configuration (Prometheus)
+
+- `STATS_EXPORTER` - metrics backend: "prometheus" to enable Prometheus metrics, or empty to disable (optional, default "")
+
+**When STATS_EXPORTER="prometheus":**
+- Metrics are exposed at `http://<ADMIN_HTTP_PORT>/metrics`
+- Available metrics include:
+  - `http_server_response_count_by_path_code_and_method` - request counts by path, status code, and method
+  - `http_server_request_latency_by_path_and_method` - request latency histograms
+  - `http_server_request_size` - request size distribution
+  - `http_proxy_request_count_by_path` - upstream request counts
+  - `http_proxy_request_latency_by_path` - upstream request latency
+  - `plugin_oauth2_*` - OAuth2 authentication metrics
+  - `plugin_jwt_manager_validation_error_total` - JWT validation errors
+
 ##### Whalebone API upstream endpoints configuration (values used in [api\_template.json](api\_template.json))
 
-`i` - is whole number (0, 1, 2...) that allows to specify more WB api upstreams each 
+`i` - is whole number (0, 1, 2...) that allows to specify more WB api upstreams each
 
 - `WB_API_<i>` - the name of the upstream WB api (no spaces) (mandatory)
 - `WB_API_<i>_ENABLED` - enable or disable requests forwarding to upstream WB api (optional; true or false; default true)

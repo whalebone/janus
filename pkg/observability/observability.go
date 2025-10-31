@@ -19,6 +19,7 @@ const (
 	AzureMonitor = "azure_monitor"
 	Datadog      = "datadog"
 	Jaeger       = "jaeger"
+	OTLP         = "otlp"
 	Prometheus   = "prometheus"
 	Stackdriver  = "stackdriver"
 	Zipkin       = "zipkin"

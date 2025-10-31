@@ -20,3 +20,23 @@ port = @HTTP_PORT@
 
 [database]
   dsn = "file:///etc/janus"
+
+################################################################
+# Tracing configuration (OpenTelemetry/OpenCensus)
+################################################################
+[tracing]
+  exporter = "@TRACING_EXPORTER@"
+  service_name = "@TRACING_SERVICE_NAME@"
+  sampling_param = @TRACING_SAMPLING_PARAM@
+
+  # OTLP configuration (when exporter = "otlp")
+  [tracing.otlp]
+    endpoint = "@TRACING_OTLP_ENDPOINT@"
+    protocol = "@TRACING_OTLP_PROTOCOL@"
+    insecure = @TRACING_OTLP_INSECURE@
+
+################################################################
+# Metrics/Stats configuration (Prometheus via OpenCensus)
+################################################################
+[stats]
+  exporter = "@STATS_EXPORTER@"
