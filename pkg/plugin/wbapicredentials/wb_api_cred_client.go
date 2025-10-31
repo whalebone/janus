@@ -52,7 +52,12 @@ func (wbClient *WBAPICredClient) Login(ctx context.Context, wbAccessKey, wbSecre
 
 	client := &http.Client{
 		Transport: &otel.RequestIDPropagatingTransport{
-			RoundTripper: otelhttp.NewTransport(http.DefaultTransport),
+			RoundTripper: otelhttp.NewTransport(
+				http.DefaultTransport,
+				otelhttp.WithSpanNameFormatter(func(operation string, r *http.Request) string {
+					return operation + " " + r.URL.Path
+				}),
+			),
 		},
 	}
 	response, err := client.Do(req)
