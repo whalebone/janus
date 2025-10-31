@@ -68,12 +68,12 @@ type Database struct {
 
 // Stats holds the configuration for stats
 type Stats struct {
-	DSN                   string   `envconfig:"STATS_DSN"`
-	IDs                   string   `envconfig:"STATS_IDS"`
-	AutoDiscoverThreshold uint     `envconfig:"STATS_AUTO_DISCOVER_THRESHOLD"`
-	AutoDiscoverWhiteList []string `envconfig:"STATS_AUTO_DISCOVER_WHITE_LIST"`
-	ErrorsSection         string   `envconfig:"STATS_ERRORS_SECTION"`
-	Exporter              string   `envconfig:"STATS_EXPORTER"`
+	DSN                   string   `envconfig:"STATS_DSN" mapstructure:"dsn"`
+	IDs                   string   `envconfig:"STATS_IDS" mapstructure:"ids"`
+	AutoDiscoverThreshold uint     `envconfig:"STATS_AUTO_DISCOVER_THRESHOLD" mapstructure:"auto_discover_threshold"`
+	AutoDiscoverWhiteList []string `envconfig:"STATS_AUTO_DISCOVER_WHITE_LIST" mapstructure:"auto_discover_white_list"`
+	ErrorsSection         string   `envconfig:"STATS_ERRORS_SECTION" mapstructure:"errors_section"`
+	Exporter              string   `envconfig:"STATS_EXPORTER" mapstructure:"exporter"`
 }
 
 // Credentials represents the credentials that are going to be
@@ -108,14 +108,15 @@ func (auth *Github) IsConfigured() bool {
 
 // Tracing represents the distributed tracing configuration
 type Tracing struct {
-	Exporter         string        `envconfig:"TRACING_EXPORTER"`
-	ServiceName      string        `envconfig:"TRACING_SERVICE_NAME"`
-	SamplingStrategy string        `envconfig:"TRACING_SAMPLING_STRATEGY"`
-	SamplingParam    float64       `envconfig:"TRACING_SAMPLING_PARAM"`
-	DebugTraceKey    string        `envconfig:"TRACING_DEBUG_TRACE_KEY"`
-	IsPublicEndpoint bool          `envconfig:"TRACING_IS_PUBLIC_ENDPOINT"`
-	JaegerTracing    JaegerTracing `mapstructure:"jaeger"`
-	OTLPTracing      OTLPTracing   `mapstructure:"otlp"`
+	Exporter         string                 `envconfig:"TRACING_EXPORTER" mapstructure:"exporter"`
+	ServiceName      string                 `envconfig:"TRACING_SERVICE_NAME" mapstructure:"service_name"`
+	SamplingStrategy string                 `envconfig:"TRACING_SAMPLING_STRATEGY" mapstructure:"sampling_strategy"`
+	SamplingParam    float64                `envconfig:"TRACING_SAMPLING_PARAM" mapstructure:"sampling_param"`
+	DebugTraceKey    string                 `envconfig:"TRACING_DEBUG_TRACE_KEY" mapstructure:"debug_trace_key"`
+	IsPublicEndpoint bool                   `envconfig:"TRACING_IS_PUBLIC_ENDPOINT" mapstructure:"is_public_endpoint"`
+	Attributes       map[string]string      `mapstructure:"attributes"`
+	JaegerTracing    JaegerTracing          `mapstructure:"jaeger"`
+	OTLPTracing      OTLPTracing            `mapstructure:"otlp"`
 }
 
 // JaegerTracing holds the Jaeger tracing configuration
@@ -155,14 +156,14 @@ func init() {
 	viper.SetDefault("web.credentials.github.teams", make(map[string]string))
 
 	viper.SetDefault("stats.dsn", "log://")
-	viper.SetDefault("stats.errorsSection", "error-log")
+	viper.SetDefault("stats.errors_section", "error-log")
 	viper.SetDefault("stats.namespace", serviceName)
 
-	viper.SetDefault("tracing.serviceName", serviceName)
-	viper.SetDefault("tracing.samplingStrategy", "probabilistic")
-	viper.SetDefault("tracing.samplingParam", 0.15)
-	viper.SetDefault("tracing.debugTraceKey", "")
-	viper.SetDefault("tracing.isPublicEndpoint", true)
+	viper.SetDefault("tracing.service_name", serviceName)
+	viper.SetDefault("tracing.sampling_strategy", "probabilistic")
+	viper.SetDefault("tracing.sampling_param", 0.15)
+	viper.SetDefault("tracing.debug_trace_key", "")
+	viper.SetDefault("tracing.is_public_endpoint", true)
 
 	logging.InitDefaults(viper.GetViper(), "log")
 }
