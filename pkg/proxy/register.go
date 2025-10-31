@@ -77,17 +77,26 @@ func (p *Register) Add(definition *RouterDefinition) error {
 	}
 
 	if p.matcher.Match(definition.ListenPath) {
-		p.doRegister(p.matcher.Extract(definition.ListenPath), definition, &ochttp.Handler{Handler: handler, IsPublicEndpoint: p.isPublicEndpoint})
+		p.doRegister(p.matcher.Extract(definition.ListenPath), definition, handler, p.isPublicEndpoint)
 	}
 
-	p.doRegister(definition.ListenPath, definition, &ochttp.Handler{Handler: handler, IsPublicEndpoint: p.isPublicEndpoint})
+	p.doRegister(definition.ListenPath, definition, handler, p.isPublicEndpoint)
 	return nil
 }
 
-func (p *Register) doRegister(listenPath string, def *RouterDefinition, handler http.Handler) {
+func (p *Register) doRegister(listenPath string, def *RouterDefinition, handler http.Handler, isPublicEndpoint bool) {
 	log.WithFields(log.Fields{
 		"listen_path": listenPath,
 	}).Debug("Registering a route")
+
+	// Apply middleware to handler first (auth, host matcher, stats tagger)
+	wrappedHandler := handler
+	for i := len(def.middleware) - 1; i >= 0; i-- {
+		wrappedHandler = def.middleware[i](wrappedHandler)
+	}
+
+	// Then wrap with ochttp.Handler for server-side tracing (creates parent span)
+	ochttpHandler := &ochttp.Handler{Handler: wrappedHandler, IsPublicEndpoint: isPublicEndpoint}
 
 	if strings.Index(listenPath, "/") != 0 {
 		log.WithField("listen_path", listenPath).
@@ -95,9 +104,9 @@ func (p *Register) doRegister(listenPath string, def *RouterDefinition, handler 
 	} else {
 		for _, method := range def.Methods {
 			if strings.ToUpper(method) == methodAll {
-				p.router.Any(listenPath, handler.ServeHTTP, def.middleware...)
+				p.router.Any(listenPath, ochttpHandler.ServeHTTP)
 			} else {
-				p.router.Handle(strings.ToUpper(method), listenPath, handler.ServeHTTP, def.middleware...)
+				p.router.Handle(strings.ToUpper(method), listenPath, ochttpHandler.ServeHTTP)
 			}
 		}
 	}
