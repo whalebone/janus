@@ -55,7 +55,7 @@ func (wbClient *WBAPICredClient) Login(ctx context.Context, wbAccessKey, wbSecre
 			RoundTripper: otelhttp.NewTransport(
 				http.DefaultTransport,
 				otelhttp.WithSpanNameFormatter(func(operation string, r *http.Request) string {
-					return operation + " " + r.URL.Path
+					return r.Method + " " + r.URL.Path
 				}),
 			),
 		},

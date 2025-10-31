@@ -96,7 +96,13 @@ func (p *Register) doRegister(listenPath string, def *RouterDefinition, handler 
 	}
 
 	// Then wrap with ochttp.Handler for server-side tracing (creates parent span)
-	ochttpHandler := &ochttp.Handler{Handler: wrappedHandler, IsPublicEndpoint: isPublicEndpoint}
+	ochttpHandler := &ochttp.Handler{
+		Handler:          wrappedHandler,
+		IsPublicEndpoint: isPublicEndpoint,
+		FormatSpanName: func(r *http.Request) string {
+			return r.Method + " " + r.URL.Path
+		},
+	}
 
 	if strings.Index(listenPath, "/") != 0 {
 		log.WithField("listen_path", listenPath).
