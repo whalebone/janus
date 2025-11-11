@@ -27,8 +27,23 @@ const (
 // NewBalancedReverseProxy creates a reverse proxy that is load balanced
 func NewBalancedReverseProxy(def *Definition, balancer balancer.Balancer, statsClient client.Client) *httputil.ReverseProxy {
 	return &httputil.ReverseProxy{
-		Director: createDirector(def, balancer, statsClient),
+		Director:       createDirector(def, balancer, statsClient),
+		ModifyResponse: modifyResponse,
 	}
+}
+
+// modifyResponse marks the span as failed if the upstream service returns a 5xx status code
+func modifyResponse(resp *http.Response) error {
+	if resp != nil && resp.StatusCode >= 500 {
+		span := trace.FromContext(resp.Request.Context())
+		if span != nil {
+			span.SetStatus(trace.Status{
+				Code:    trace.StatusCodeInternal,
+				Message: fmt.Sprintf("Upstream service returned %d", resp.StatusCode),
+			})
+		}
+	}
+	return nil
 }
 
 func createDirector(proxyDefinition *Definition, balancer balancer.Balancer, statsClient client.Client) func(req *http.Request) {
