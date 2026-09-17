@@ -38,11 +38,14 @@ make lint               # runs golangci-lint (gofmt + goimports only) in a docke
 ```
 
 - Run a single unit test: `go test ./pkg/plugin/wbmicrocredentials/... -run TestName -v`
-- Integration tests are gated behind the `integration` build tag. They use a filesystem-backed
-  `api.Repository` (`api.NewFileSystemRepository`, see `pkg/loader/api_loader_test.go`,
-  `pkg/proxy/register_test.go`) against a WireMock stand-in for the upstream service, wired via
-  `DYNAMIC_UPSTREAMS_PORT` (see `build/mocks.sh`). They do **not** need Mongo or the auth-service mock —
-  those two only apply to feature tests below.
+- Integration tests are gated behind the `integration` build tag. The Go test code itself uses a
+  filesystem-backed `api.Repository` (`api.NewFileSystemRepository`, see `pkg/loader/api_loader_test.go`,
+  `pkg/proxy/register_test.go`) and only reads `DYNAMIC_UPSTREAMS_PORT` — it never queries the
+  auth-service mock or Mongo. However, `make test-integration` depends on `_mocks`
+  (`build/mocks.sh`), which unconditionally uploads fixtures to *both* the upstream and auth-service
+  WireMock endpoints, so running the Make target still requires the auth-service mock to be up even
+  though no test exercises it. Only Mongo is safe to skip for this target — it's needed solely by the
+  feature tests below.
 - Feature tests (`features/*.feature`) use [godog](https://github.com/cucumber/godog); `make test-features` builds
   the binary first, then runs `build/features.sh`, which starts the built binary (configured with a MongoDB-backed
   repository, `DYNAMIC_MONGO_PORT`) against the mocked upstream/auth services (`DYNAMIC_UPSTREAMS_PORT`,
@@ -98,9 +101,13 @@ manage API definitions and expose health/metrics/profiling. They are started and
 only if that fails does it fall back to `config.LoadEnv()` (`envconfig.Process` over
 `pkg/config/specification.go`'s struct tags). If the file loads successfully, env vars for these
 `Specification` fields are **not** consulted — don't document them as overriding a present config file.
-The WB docker image (`wb_docker/`) sidesteps this by generating `janus.toml` and `api_template.json`
-from `WB_API_<i>_*` env vars *before* Janus starts — see `wb_docker/README.md` for the full variable
-reference, including which are valid only for `wb_micro_credentials_auth` vs `wb_api_credentials_auth`.
+The WB docker image (`wb_docker/`) sidesteps this: its `entrypoint.go` writes `janus.toml` *before*
+Janus starts, so file-based config always wins there. Two separate steps populate it:
+`prepareJanusConfiguration` fills `janus.toml` from general env vars (`HTTP_PORT`, `LOG_LEVEL`,
+tracing, etc.), while `prepareNewAPIConfigs` copies the checked-in `api_template.json` into one file
+per `WB_API_<i>` index and substitutes that index's `WB_API_<i>_*` vars into the copy — the template
+file itself is never rewritten. See `wb_docker/README.md` for the full variable reference, including
+which auth vars are valid only for `wb_micro_credentials_auth` vs `wb_api_credentials_auth`.
 
 ## Writing a new plugin
 
