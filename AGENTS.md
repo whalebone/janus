@@ -2,6 +2,18 @@
 
 This file provides guidance to AI coding agents working with code in this repository.
 
+## ⚠️ Branch: work on `wb-micro-cred-auth`, not `master`
+
+`master` is behind and not what's in production. All active Whalebone development and the actual
+production deployment lineage live on **`origin/wb-micro-cred-auth`** (currently 41 commits ahead of
+`master`, most recent Nov 2025). Its tags (e.g. `4.0.0-wb-1.0.6`) are what's built and pushed to
+`harbor.whalebone.io/whalebone/janus` and deployed in `k8s-wb` (see Service Map). Before starting any
+work here, check out or branch from `wb-micro-cred-auth`, not `master`. If you're reading this from a
+`master` checkout, verify with `git log origin/wb-micro-cred-auth --oneline -5` that this is still
+true before trusting it — branches get merged/renamed over time.
+
+The rest of this document describes the codebase as it exists on `wb-micro-cred-auth`.
+
 ## Service identity
 
 Janus is an HTTP API gateway (Whalebone's fork of [hellofresh/janus](https://github.com/hellofresh/janus)). It sits
@@ -26,12 +38,18 @@ make lint               # runs golangci-lint (gofmt + goimports only) in a docke
 ```
 
 - Run a single unit test: `go test ./pkg/plugin/wbmicrocredentials/... -run TestName -v`
-- Integration tests are gated behind the `integration` build tag and expect WireMock stand-ins for upstream/auth
-  services plus a Mongo instance; see `build/mocks.sh` and `.github/workflows/testing.yml` for how ports
-  (`DYNAMIC_MONGO_PORT`, `DYNAMIC_UPSTREAMS_PORT`, `DYNAMIC_AUTH_PORT`) are wired in CI.
+- Integration tests are gated behind the `integration` build tag. They use a filesystem-backed
+  `api.Repository` (`api.NewFileSystemRepository`, see `pkg/loader/api_loader_test.go`,
+  `pkg/proxy/register_test.go`) against a WireMock stand-in for the upstream service, wired via
+  `DYNAMIC_UPSTREAMS_PORT` (see `build/mocks.sh`). They do **not** need Mongo or the auth-service mock —
+  those two only apply to feature tests below.
 - Feature tests (`features/*.feature`) use [godog](https://github.com/cucumber/godog); `make test-features` builds
-  the binary first, then runs `build/features.sh`, which starts the built binary against the mocked services.
-- CI (`.github/workflows/testing.yml`) runs lint → unit → integration → features, in that order, on every push.
+  the binary first, then runs `build/features.sh`, which starts the built binary (configured with a MongoDB-backed
+  repository, `DYNAMIC_MONGO_PORT`) against the mocked upstream/auth services (`DYNAMIC_UPSTREAMS_PORT`,
+  `DYNAMIC_AUTH_PORT`).
+- CI (`.github/workflows/testing.yml`) runs lint → unit → integration → features, in that order, on
+  any push that includes a non-Markdown file change (`paths-ignore: ["**/*.md"]`) — a docs-only push
+  skips these jobs entirely.
 
 ## Architecture
 
@@ -71,14 +89,18 @@ manage API definitions and expose health/metrics/profiling. They are started and
 **Observability:** the project is mid-migration from OpenCensus to OpenTelemetry — `pkg/observability` and
 `pkg/observability/otel` bridge the two (see `go.opencensus.io` + `go.opentelemetry.io/otel/bridge/opencensus` in
 `go.mod`). Tracing exporter (`otlp` or legacy `jaeger`) and Prometheus stats exporter are configured in
-`cmd/server.go`'s `initTracingExporter`/`initStatsExporter`, driven by `config.Specification`
+`cmd/init.go`'s `initTracingExporter`/`initStatsExporter` (invoked from `cmd/server.go`'s
+`RunServerStart`), driven by `config.Specification`
 (`pkg/config/specification.go`), which is populated from `janus.toml` / env vars via `envconfig`.
 
-**Config precedence:** `janus.toml` (see `janus.sample.toml` for the full annotated spec) is the base, overridden by
-environment variables (`pkg/config/specification.go` uses `envconfig` struct tags). The WB docker image
-(`wb_docker/`) additionally generates `janus.toml` and `api_template.json` from `WB_API_<i>_*` env vars — see
-`wb_docker/README.md` for the full variable reference, including which are valid only for
-`wb_micro_credentials_auth` vs `wb_api_credentials_auth`.
+**Config loading is file-or-env fallback, not a merge:** `cmd/init.go`'s `initConfig` calls
+`config.Load(configFile)` (reads `janus.toml`, see `janus.sample.toml` for the full annotated spec);
+only if that fails does it fall back to `config.LoadEnv()` (`envconfig.Process` over
+`pkg/config/specification.go`'s struct tags). If the file loads successfully, env vars for these
+`Specification` fields are **not** consulted — don't document them as overriding a present config file.
+The WB docker image (`wb_docker/`) sidesteps this by generating `janus.toml` and `api_template.json`
+from `WB_API_<i>_*` env vars *before* Janus starts — see `wb_docker/README.md` for the full variable
+reference, including which are valid only for `wb_micro_credentials_auth` vs `wb_api_credentials_auth`.
 
 ## Writing a new plugin
 
@@ -92,8 +114,9 @@ Follow an existing plugin under `pkg/plugin/` (e.g. `wbmicrocredentials` or `rat
 
 ## Documentation
 
-- `docs/plugins/` — one file per plugin, config reference (`docs/plugins/wb_micro_credentials_auth.md` for the WB
-  auth plugin).
+- `docs/plugins/` — meant to hold one config-reference file per plugin (`docs/plugins/wb_micro_credentials_auth.md`
+  for the `wbmicrocredentials` plugin), but coverage isn't complete — e.g. `pkg/plugin/wbapicredentials` has no
+  corresponding doc yet. Don't assume a doc exists just because a plugin package does; check the directory.
 - `docs/proxy/` — proxy-level route properties (`listen_path`, `strip_path`, `append_path`, `preserve_host`, etc.).
 - `docs/auth/`, `docs/clustering/`, `docs/config/`, `docs/install/`, `docs/quick_start/`, `docs/upgrade/` — upstream
   Janus docs (GitBook source, `docs/SUMMARY.md` is the table of contents).
