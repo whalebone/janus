@@ -1,0 +1,8 @@
+site_name: janus
+docs_dir: docs
+plugins:
+  - techdocs-core
+nav:
+  - Home: index.md
+  - Introduction: README.md
+  - Contents: SUMMARY.md

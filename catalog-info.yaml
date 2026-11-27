@@ -1,0 +1,29 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: janus
+  title: Janus
+  description: Whalebone fork of the HelloFresh Janus API gateway, run as the authenticating API gateway in front of several teams' services.
+  annotations:
+    github.com/project-slug: whalebone/janus
+    backstage.io/techdocs-ref: dir:.
+  links:
+    - title: "k8s-wb: central-auth"
+      url: https://github.com/whalebone/k8s-wb/tree/HEAD/deployments/central-auth
+    - title: "k8s-wb: idp"
+      url: https://github.com/whalebone/k8s-wb/tree/HEAD/deployments/idp
+    - title: "k8s-wb: jules-janus"
+      url: https://github.com/whalebone/k8s-wb/tree/HEAD/deployments/jules-janus
+    - title: "k8s-wb: mob-app"
+      url: https://github.com/whalebone/k8s-wb/tree/HEAD/deployments/mob-app
+    - title: "k8s-wb: partner-portal"
+      url: https://github.com/whalebone/k8s-wb/tree/HEAD/deployments/partner-portal
+    - title: "k8s-wb: publicapi"
+      url: https://github.com/whalebone/k8s-wb/tree/HEAD/deployments/publicapi
+    - title: "k8s-wb: retail"
+      url: https://github.com/whalebone/k8s-wb/tree/HEAD/deployments/retail
+spec:
+  type: service
+  lifecycle: production
+  owner: aegis
+  system: shared-platform-services
